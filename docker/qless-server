@@ -1,0 +1,18 @@
+#/bin/bash
+
+redis-server &
+REDIS_PID="$!"
+
+while true; do
+  redis-cli quit
+  LAST_STATUS="$?"
+  if [ "$LAST_STATUS" != "0" ]; then
+    sleep 1
+  else
+    break
+  fi
+done
+
+cat qless.lua | redis-cli -x script load
+
+wait "$REDIS_PID"
