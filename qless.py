@@ -47,7 +47,7 @@ class QlessRecorder(object):
     def __enter__(self):
         self.log = []
         self._pubsub.psubscribe('*')
-        self._pubsub.listen().next()
+        next(self._pubsub.listen())
         return self
 
     def __exit__(self, typ, val, traceback):

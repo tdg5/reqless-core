@@ -359,7 +359,7 @@ class TestGracePeriod(TestQless):
         '''Grace periods should be given for each lock lost, not just first'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 20)
         job = self.lua('pop', 0, 'queue', 'worker', 10)[0]
-        for _ in xrange(10):
+        for _ in list(range(10)):
             # Now, we'll lose the lock, but we should only get a warning, and
             # not actually have the job handed off to another yet
             expires = job['expires'] + 10

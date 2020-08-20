@@ -19,12 +19,17 @@ class TestConfig(TestQless):
     def test_get(self):
         '''Should be able to get each key individually'''
         for key, value in self.lua('config.get', 0).items():
-            self.assertEqual(self.lua('config.get', 0, key), value)
+            print(key)
+            print(value)
+            retrievedValue = self.lua('config.get', 0, key)
+            if isinstance(retrievedValue, bytes):
+                retrievedValue = retrievedValue.decode("utf-8")
+            self.assertEqual(retrievedValue, value)
 
     def test_set_get(self):
         '''If we update a configuration setting, we can get it back'''
         self.lua('config.set', 0, 'foo', 'bar')
-        self.assertEqual(self.lua('config.get', 0, 'foo'), 'bar')
+        self.assertEqual(self.lua('config.get', 0, 'foo').decode("UTF-8"), 'bar')
 
     def test_unset_default(self):
         '''If we override a default and then unset it, it should return'''

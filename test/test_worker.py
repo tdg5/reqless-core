@@ -136,7 +136,7 @@ class TestWorker(TestQless):
 
     def test_reregister(self):
         '''We should be able to remove workers from the list of workers'''
-        for jid in xrange(10):
+        for jid in list(range(10)):
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         # And pop them from 10 different workers
         workers = map(str, range(10))

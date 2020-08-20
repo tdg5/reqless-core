@@ -120,7 +120,7 @@ class TestDependencies(TestQless):
 
     def test_multiple_dependency(self):
         '''Unlock a job only after all dependencies have been met'''
-        jids = map(str, range(10))
+        jids = list(map(str, range(10)))
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
         # This job depends on all of the above
@@ -135,7 +135,7 @@ class TestDependencies(TestQless):
 
     def test_dependency_chain(self):
         '''Test out successive unlocking of a dependency chain'''
-        jids = map(str, range(10))
+        jids = list(map(str, range(10)))
         self.lua('put', 0, 'worker', 'queue', 0, 'klass', {}, 0)
         for jid, dep in zip(jids[1:], jids[:-1]):
             self.lua(
@@ -154,11 +154,11 @@ class TestDependencies(TestQless):
         self.lua('put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.lua('put', 2, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['a'])
         self.lua('depends', 3, 'c', 'on', 'b')
-        self.assertEqual(self.lua('get', 4, 'c')['dependencies'], ['a', 'b'])
+        self.assertEqual(set(self.lua('get', 4, 'c')['dependencies']), set(['a', 'b']))
 
     def test_remove_dependency(self):
         '''We can remove dependencies'''
-        jids = map(str, range(10))
+        jids = list(map(str, range(10)))
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
         # This job depends on all of the above

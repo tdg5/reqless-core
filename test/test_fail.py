@@ -143,7 +143,7 @@ class TestFailed(TestQless):
 
     def test_failed_pagination(self):
         '''Failed provides paginated access'''
-        jids = map(str, range(100))
+        jids = list(map(str, range(100)))
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
