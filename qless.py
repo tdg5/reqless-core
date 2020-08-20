@@ -1,12 +1,30 @@
 '''Some helper functions for running tests. This should not be confused with
 the python qless bindings.'''
 
+import hashlib
+import os
+
 try:
     import simplejson as json
 except ImportError:
     import json
     json.JSONDecodeError = ValueError
 
+class FauxScript:
+    """A fake version of the executable Lua script object returned by
+    ``register_script`` that expects the script to have already been
+    registered."""
+
+    def __init__(self, registered_client, sha):
+        self.registered_client = registered_client
+        self.sha = sha
+
+    def __call__(self, keys=[], args=[], client=None):
+        "Execute the script, passing any required ``args``"
+        if client is None:
+            client = self.registered_client
+        args = tuple(keys) + tuple(args)
+        return client.evalsha(self.sha, len(keys), *args)
 
 class QlessRecorder(object):
     '''A context-manager to capture anything that goes back and forth'''
@@ -15,8 +33,15 @@ class QlessRecorder(object):
     def __init__(self, client):
         self._client = client
         self._pubsub = self._client.pubsub()
+        script_already_registered = os.environ.get('SCRIPT_ALREADY_REGISTERED')
         with open('qless.lua') as fin:
-            self._lua = self._client.register_script(fin.read())
+            if script_already_registered != None:
+                encoder = client.connection_pool.get_encoder()
+                script = encoder.encode(fin.read())
+                sha = hashlib.sha1(script).hexdigest()
+                self._lua = FauxScript(self._client, sha)
+            else:
+                self._lua = self._client.register_script(fin.read())
         # Record any log messages that we've seen
         self.log = []
 
