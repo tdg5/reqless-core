@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e
+
+get_repo_dir () {
+  SOURCE="${BASH_SOURCE[0]}"
+  # While $SOURCE is a symlink, resolve it
+  while [ -h "$SOURCE" ]; do
+       DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+       SOURCE="$( readlink "$SOURCE" )"
+       # If $SOURCE was a relative symlink (so no "/" as prefix, need to resolve
+       # it relative to the symlink base directory
+       [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  done
+  DIR="$( cd -P "$( dirname "$SOURCE" )/.." && pwd )"
+  echo "$DIR"
+}
+
+REPO_DIR=$(get_repo_dir)
+
+cd "$REPO_DIR"
+
+if [ ! -f "${REPO_DIR}/qless.lua" ]; then
+  make -f "${REPO_DIR}/Makefile" qless.lua
+fi
+
+GIT_SHA="$(git -C "$REPO_DIR" rev-parse HEAD)"
+
+LATEST_TAG=qless-core:latest
+GIT_SHA_TAG="qless-core:${GIT_SHA}"
+
+docker build \
+  --tag "$GIT_SHA_TAG" \
+  --tag "$LATEST_TAG" \
+  "$REPO_DIR"
