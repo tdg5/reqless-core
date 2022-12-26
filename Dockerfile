@@ -1,4 +1,4 @@
-FROM redis:6
+FROM redis:7.0.7
 
 COPY qless.lua /data/qless.lua
 

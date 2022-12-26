@@ -264,7 +264,7 @@ function QlessQueue:peek(now, count)
 
   -- With these in place, we can expand this list of jids based on the work
   -- queue itself and the priorities therein
-  table.extend(jids, self.work.peek(count - #jids))
+  table_extend(jids, self.work.peek(count - #jids))
 
   return jids
 end
