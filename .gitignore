@@ -1,3 +1,4 @@
 qless.lua
 qless-lib.lua
 *.pyc
+venv
