@@ -2,7 +2,7 @@
 function QlessRecurringJob:data()
   local job = redis.call(
     'hmget', 'ql:r:' .. self.jid, 'jid', 'klass', 'state', 'queue',
-    'priority', 'interval', 'retries', 'count', 'data', 'tags', 'backlog')
+    'priority', 'interval', 'retries', 'count', 'data', 'tags', 'backlog', 'throttles')
   
   if not job[1] then
     return nil
@@ -19,7 +19,8 @@ function QlessRecurringJob:data()
     count        = tonumber(job[8]),
     data         = job[9],
     tags         = cjson.decode(job[10]),
-    backlog      = tonumber(job[11] or 0)
+    backlog      = tonumber(job[11] or 0),
+    throttles    = cjson.decode(job[12] or '[]'),
   }
 end
 
@@ -55,10 +56,24 @@ function QlessRecurringJob:update(now, ...)
       elseif key == 'klass' then
         redis.call('hset', 'ql:r:' .. self.jid, 'klass', value)
       elseif key == 'queue' then
-        local queue_obj = Qless.queue(
-          redis.call('hget', 'ql:r:' .. self.jid, 'queue'))
+        local old_queue_name = redis.call('hget', 'ql:r:' .. self.jid, 'queue')
+        local queue_obj = Qless.queue(old_queue_name)
         local score = queue_obj.recurring.score(self.jid)
+
+        -- Detach from the old queue
         queue_obj.recurring.remove(self.jid)
+        local throttles = cjson.decode(redis.call('hget', 'ql:r:' .. self.jid, 'throttles') or '{}')
+        for index, tname in ipairs(throttles) do
+          if tname == QlessQueue.ns .. old_queue_name then
+            table.remove(throttles, index)
+          end
+        end
+
+
+        -- Attach to the new queue
+        table.insert(throttles, QlessQueue.ns .. value)
+        redis.call('hset', 'ql:r:' .. self.jid, 'throttles', cjson.encode(throttles))
+
         Qless.queue(value).recurring.add(score, self.jid)
         redis.call('hset', 'ql:r:' .. self.jid, 'queue', value)
         -- If we don't already know about the queue, learn about it
@@ -69,6 +84,9 @@ function QlessRecurringJob:update(now, ...)
         value = assert(tonumber(value),
           'Recur(): Arg "backlog" not a number: ' .. tostring(value))
         redis.call('hset', 'ql:r:' .. self.jid, 'backlog', value)
+      elseif key == 'throttles' then
+        local throttles = assert(cjson.decode(value), 'Recur(): Arg "throttles" is not JSON-encoded: ' .. tostring(value))
+        redis.call('hset', 'ql:r:' .. self.jid, 'throttles', cjson.encode(throttles))
       else
         error('Recur(): Unrecognized option "' .. key .. '"')
       end

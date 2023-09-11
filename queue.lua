@@ -763,11 +763,22 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     local count, old_queue = unpack(redis.call('hmget', 'ql:r:' .. jid, 'count', 'queue'))
     count = count or 0
 
+    local throttles = options['throttles'] or {}
+
     -- If it has previously been in another queue, then we should remove
     -- some information about it
     if old_queue then
       Qless.queue(old_queue).recurring.remove(jid)
+
+      for index, tname in ipairs(throttles) do
+        if tname == old_queue then
+          table.remove(throttles, index)
+        end
+      end
     end
+
+    -- insert default queue throttle
+    table.insert(throttles, QlessQueue.ns .. self.name)
 
     -- Do some insertions
     redis.call('hmset', 'ql:r:' .. jid,
@@ -784,7 +795,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
       'interval' , interval,
       'retries'  , options.retries,
       'backlog'  , options.backlog,
-      'throttles', cjson.encode(options.throttles or {}))
+      'throttles', cjson.encode(throttles))
     -- Now, we should schedule the next run of the job
     self.recurring.add(now + offset, jid)
 

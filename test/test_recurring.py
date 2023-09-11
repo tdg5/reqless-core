@@ -137,7 +137,8 @@ class TestRecurring(TestQless):
             'queue': 'queue',
             'retries': 0,
             'state': 'recur',
-            'tags': {}
+            'tags': {},
+            'throttles': ['ql:q:queue'],
         })
 
     def test_update_priority(self):
@@ -191,7 +192,20 @@ class TestRecurring(TestQless):
         self.lua('recur.update', 0, 'jid', 'queue', 'other')
         # No longer available in the old queue
         self.assertEqual(len(self.lua('pop', 60, 'queue', 'worker', 10)), 0)
-        self.assertEqual(len(self.lua('pop', 60, 'other', 'worker', 10)), 1)
+        popped_jobs = self.lua('pop', 60, 'other', 'worker', 10)
+        self.assertEqual(len(popped_jobs), 1)
+        job = popped_jobs[0]
+        self.assertEqual(job["throttles"], ["ql:q:other"])
+
+    def test_update_throttles(self):
+        '''We need to be able to update the throttles'''
+        queue_name = 'queue'
+        self.lua('recur', 0, queue_name, 'jid', 'klass', {}, 'interval', 60,  0)
+        self.assertEqual(
+            self.lua('pop', 0, queue_name, 'worker', 10)[0]['throttles'], [f'ql:q:{queue_name}'])
+        self.lua('recur.update', 0, 'jid', 'throttles', ['throttle'])
+        self.assertEqual(self.lua(
+            'pop', 60, queue_name, 'worker', 10)[0]['throttles'], ['throttle'])
 
     def test_unrecur(self):
         '''Stop a recurring job'''
@@ -262,7 +276,7 @@ class TestRecurring(TestQless):
             'state': 'running',
             'tags': ['foo'],
             'tracked': False,
-            'throttles': {},
+            'throttles': ['ql:q:queue'],
             'worker': 'worker',
             'spawned_from_jid': 'jid'})
         self.lua('recur', 60, 'queue', 'jid', 'class', {'foo': 'bar'},
@@ -284,7 +298,7 @@ class TestRecurring(TestQless):
             'state': 'running',
             'tags': ['bar'],
             'tracked': False,
-            'throttles': ['lala'],
+            'throttles': ['lala', 'ql:q:queue'],
             'worker': 'worker',
             'spawned_from_jid': 'jid'})
 
