@@ -698,6 +698,10 @@ function QlessJob:timeout(now)
     self:history(now, 'timed-out')
     local queue = Qless.queue(queue_name)
     queue.locks.remove(self.jid)
+
+    -- Release acquired throttles
+    self:throttles_release(now)
+
     queue.work.add(now, math.huge, self.jid)
     redis.call('hmset', QlessJob.ns .. self.jid,
       'state', 'stalled', 'expires', 0)

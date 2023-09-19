@@ -244,7 +244,6 @@ class TestRelease(TestQless):
     self.assertEqual(self.lua('throttle.pending', 12, 'tid'), [b'jid1'])
     self.assertEqual(self.lua('jobs', 13, 'throttled', 'queue'), [b'jid1'])
 
-  '''Test that when a job is timed out to another queue it maintains its state'''
   def test_on_timeout_locks_are_properly_released(self):
     self.lua('throttle.set', 0, 'tid', 1)
     self.lua('put', 0, 'worker', 'queue', 'jid1', 'klass', {}, 0, 'throttles', ['tid'])
@@ -254,9 +253,9 @@ class TestRelease(TestQless):
     self.assertEqual(self.lua('throttle.pending', 4, 'tid'), [b'jid2'])
     self.assertEqual(self.lua('jobs', 5, 'throttled', 'queue'), [b'jid2'])
     self.lua('timeout', 6, 'jid1')
-    self.assertEqual(self.lua('throttle.locks', 7, 'tid'), [b'jid1'])
-    self.assertEqual(self.lua('throttle.pending', 8, 'tid'), [b'jid2'])
-    self.assertEqual(self.lua('jobs', 9, 'throttled', 'queue'), [b'jid2'])
+    self.assertEqual(self.lua('throttle.locks', 7, 'tid'), [])
+    self.assertEqual(self.lua('throttle.pending', 8, 'tid'), [])
+    self.assertEqual(self.lua('jobs', 9, 'throttled', 'queue'), [])
 
 class TestDependents(TestQless):
   def test_dependencies_can_acquire_lock_after_dependent_success(self):
