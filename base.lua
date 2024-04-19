@@ -38,7 +38,7 @@ Qless.config = {}
 
 -- Extend a table. This comes up quite frequently
 local function table_extend(self, other)
-  for i, v in ipairs(other) do
+  for _, v in ipairs(other) do
     table.insert(self, v)
   end
 end
@@ -161,7 +161,7 @@ function Qless.failed(group, start, limit)
     -- Otherwise, we should just list all the known failure groups we have
     local response = {}
     local groups = redis.call('smembers', 'ql:failures')
-    for index, group in ipairs(groups) do
+    for _, group in ipairs(groups) do
       response[group] = redis.call('llen', 'ql:f:' .. group)
     end
     return response
@@ -259,10 +259,10 @@ function Qless.track(now, command, jid)
   else
     local response = {
       jobs = {},
-      expired = {}
+      expired = {},
     }
     local jids = redis.call('zrange', 'ql:tracked', 0, -1)
-    for index, jid in ipairs(jids) do
+    for _, jid in ipairs(jids) do
       local data = Qless.job(jid):data()
       if data then
         table.insert(response.jobs, data)
@@ -309,10 +309,10 @@ function Qless.tag(now, command, ...)
       -- Decode the json blob, convert to dictionary
       tags = cjson.decode(tags)
       local _tags = {}
-      for i,v in ipairs(tags) do _tags[v] = true end
+      for _, v in ipairs(tags) do _tags[v] = true end
 
       -- Otherwise, add the job to the sorted set with that tags
-      for i=2,#arg do
+      for i=2, #arg do
         local tag = arg[i]
         if _tags[tag] == nil then
           _tags[tag] = true
@@ -334,17 +334,21 @@ function Qless.tag(now, command, ...)
       -- Decode the json blob, convert to dictionary
       tags = cjson.decode(tags)
       local _tags = {}
-      for i,v in ipairs(tags) do _tags[v] = true end
+      for _, v in ipairs(tags) do _tags[v] = true end
 
       -- Otherwise, remove the job from the sorted set with that tags
-      for i=2,#arg do
+      for i=2, #arg do
         local tag = arg[i]
         _tags[tag] = nil
         Qless.job(jid):remove_tag(tag)
       end
 
       local results = {}
-      for i,tag in ipairs(tags) do if _tags[tag] then table.insert(results, tag) end end
+      for _, tag in ipairs(tags) do
+        if _tags[tag] then
+          table.insert(results, tag)
+        end
+      end
 
       redis.call('hset', QlessJob.ns .. jid, 'tags', cjson.encode(results))
       return results
@@ -385,7 +389,7 @@ function Qless.cancel(now, ...)
 
   -- Now, we'll loop through every jid we intend to cancel, and we'll go
   -- make sure that this operation will be ok
-  for i, jid in ipairs(arg) do
+  for _, jid in ipairs(arg) do
     for j, dep in ipairs(dependents[jid]) do
       if dependents[dep] == nil then
         error('Cancel(): ' .. jid .. ' is a dependency of ' .. dep ..
@@ -430,7 +434,7 @@ function Qless.cancel(now, ...)
 
       -- We should probably go through all our dependencies and remove
       -- ourselves from the list of dependents
-      for i, j in ipairs(redis.call(
+      for _, j in ipairs(redis.call(
         'smembers', QlessJob.ns .. jid .. '-dependencies')) do
         redis.call('srem', QlessJob.ns .. j .. '-dependents', jid)
       end

@@ -17,7 +17,7 @@ end
 -- Return json blob of data or nil for each jid provided
 function QlessAPI.multiget(now, ...)
   local results = {}
-  for i, jid in ipairs(arg) do
+  for _, jid in ipairs(arg) do
     table.insert(results, Qless.job(jid):data())
   end
   return cjson.encode(results)
@@ -111,7 +111,7 @@ end
 QlessAPI.peek = function(now, queue, offset, count)
   local jids = Qless.queue(queue):peek(now, offset, count)
   local response = {}
-  for i, jid in ipairs(jids) do
+  for _, jid in ipairs(jids) do
     table.insert(response, Qless.job(jid):data())
   end
   return cjson.encode(response)
@@ -120,7 +120,7 @@ end
 QlessAPI.pop = function(now, queue, worker, count)
   local jids = Qless.queue(queue):pop(now, worker, count)
   local response = {}
-  for i, jid in ipairs(jids) do
+  for _, jid in ipairs(jids) do
     table.insert(response, Qless.job(jid):data())
   end
   return cjson.encode(response)

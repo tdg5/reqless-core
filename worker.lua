@@ -6,7 +6,7 @@ end
 -- Provide data about all the workers, or if a specific worker is provided,
 -- then which jobs that worker is responsible for. If no worker is provided,
 -- expect a response of the form:
--- 
+--
 --  [
 --      # This is sorted by the recency of activity from that worker
 --      {
@@ -17,9 +17,9 @@ end
 --          ...
 --      }
 --  ]
--- 
+--
 -- If a worker id is provided, then expect a response of the form:
--- 
+--
 --  {
 --      'jobs': [
 --          jid1,
@@ -38,7 +38,7 @@ function QlessWorker.counts(now, worker)
   local interval = tonumber(Qless.config.get('max-worker-age', 86400))
 
   local workers  = redis.call('zrangebyscore', 'ql:workers', 0, now - interval)
-  for index, worker in ipairs(workers) do
+  for _, worker in ipairs(workers) do
     redis.call('del', 'ql:w:' .. worker .. ':jobs')
   end
 
@@ -53,7 +53,7 @@ function QlessWorker.counts(now, worker)
   else
     local response = {}
     local workers = redis.call('zrevrange', 'ql:workers', 0, -1)
-    for index, worker in ipairs(workers) do
+    for _, worker in ipairs(workers) do
       table.insert(response, {
         name    = worker,
         jobs    = redis.call('zcount', 'ql:w:' .. worker .. ':jobs', now, now + 8640000),

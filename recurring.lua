@@ -3,11 +3,11 @@ function QlessRecurringJob:data()
   local job = redis.call(
     'hmget', 'ql:r:' .. self.jid, 'jid', 'klass', 'state', 'queue',
     'priority', 'interval', 'retries', 'count', 'data', 'tags', 'backlog', 'throttles')
-  
+
   if not job[1] then
     return nil
   end
-  
+
   return {
     jid          = job[1],
     klass        = job[2],
@@ -31,7 +31,7 @@ end
 --      - data
 --      - klass
 --      - queue
---      - backlog 
+--      - backlog
 function QlessRecurringJob:update(now, ...)
   local options = {}
   -- Make sure that the job exists
@@ -63,8 +63,8 @@ function QlessRecurringJob:update(now, ...)
         -- Detach from the old queue
         queue_obj.recurring.remove(self.jid)
         local throttles = cjson.decode(redis.call('hget', 'ql:r:' .. self.jid, 'throttles') or '{}')
-        for index, tname in ipairs(throttles) do
-          if tname == QlessQueue.ns .. old_queue_name then
+        for index, throttle_name in ipairs(throttles) do
+          if throttle_name == QlessQueue.ns .. old_queue_name then
             table.remove(throttles, index)
           end
         end
@@ -105,11 +105,11 @@ function QlessRecurringJob:tag(...)
     -- Decode the json blob, convert to dictionary
     tags = cjson.decode(tags)
     local _tags = {}
-    for i,v in ipairs(tags) do _tags[v] = true end
-    
+    for _, v in ipairs(tags) do _tags[v] = true end
+
     -- Otherwise, add the job to the sorted set with that tags
-    for i=1,#arg do if _tags[arg[i]] == nil then table.insert(tags, arg[i]) end end
-    
+    for i=1, #arg do if _tags[arg[i]] == nil then table.insert(tags, arg[i]) end end
+
     tags = cjson.encode(tags)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
     return tags
@@ -126,14 +126,14 @@ function QlessRecurringJob:untag(...)
   if tags then
     -- Decode the json blob, convert to dictionary
     tags = cjson.decode(tags)
-    local _tags    = {}
+    local _tags = {}
     -- Make a hash
-    for i,v in ipairs(tags) do _tags[v] = true end
+    for _, v in ipairs(tags) do _tags[v] = true end
     -- Delete these from the hash
-    for i = 1,#arg do _tags[arg[i]] = nil end
+    for i = 1, #arg do _tags[arg[i]] = nil end
     -- Back into a list
     local results = {}
-    for i, tag in ipairs(tags) do if _tags[tag] then table.insert(results, tag) end end
+    for _, tag in ipairs(tags) do if _tags[tag] then table.insert(results, tag) end end
     -- json encode them, set, and return
     tags = cjson.encode(results)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
