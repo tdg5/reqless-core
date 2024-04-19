@@ -10,11 +10,11 @@ function Qless.queue(name)
 
   -- Access to our work
   queue.work = {
-    peek = function(count)
+    peek = function(offset, count)
       if count <= 0 then
         return {}
       end
-      return redis.call('zrevrange', queue:prefix('work'), 0, count - 1)
+      return redis.call('zrevrange', queue:prefix('work'), offset, offset + count - 1)
     end, remove = function(...)
       if #arg > 0 then
         return redis.call('zrem', queue:prefix('work'), unpack(arg))
@@ -253,6 +253,9 @@ function QlessQueue:peek(now, offset, count)
   -- These are the ids that we're going to return. We'll begin with any jobs
   -- that have lost their locks
   local jids = self.locks.expired(now, 0, count_with_offset)
+
+  -- Since we can't just peek the range we want, we have to consider all offset
+  -- + count jobs before we can take the relevant range.
   local remaining_capacity = count_with_offset - #jids
 
   -- If we still need jobs in order to meet demand, then we should
@@ -267,15 +270,20 @@ function QlessQueue:peek(now, offset, count)
   -- unit of work.
   self:check_scheduled(now, remaining_capacity)
 
-  -- With these in place, we can expand this list of jids based on the work
-  -- queue itself and the priorities therein
-  table_extend(jids, self.work.peek(remaining_capacity))
+  if offset > #jids then
+    -- Offset takes us past the expired jids, so just return straight from the
+    -- work queue
+    return self.work.peek(offset - #jids, count)
+  else
+    -- Return a mix of expired jids and prioritized items from the work queue
+    table_extend(jids, self.work.peek(0, remaining_capacity))
 
-  if #jids < offset then
-    return {}
+    if #jids < offset then
+      return {}
+    end
+
+    return {unpack(jids, offset + 1, count_with_offset)}
   end
-
-  return {unpack(jids, offset + 1, count_with_offset)}
 end
 
 -- Return true if this queue is paused
@@ -357,7 +365,7 @@ function QlessQueue:pop(now, worker, count)
   -- the desired count or exhaust our retry limit
   while #popped < count and pop_retry_limit > 0 do
 
-    local jids = self.work.peek(count - #popped) or {}
+    local jids = self.work.peek(0, count - #popped) or {}
 
     -- If there is nothing in the work queue, then no need to keep looping
     if #jids == 0 then

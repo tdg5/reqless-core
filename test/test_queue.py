@@ -161,9 +161,9 @@ class TestQueue(TestQless):
         expected['stalled'] = 1
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         job = self.lua('pop', 1, 'queue', 'worker', 10)[0]
-        expires = job['expires'] + 10
-        self.assertEqual(self.lua('queues', expires, 'queue'), expected)
-        self.assertEqual(self.lua('queues', expires), [expected])
+        past_expiration = job['expires'] + 10
+        self.assertEqual(self.lua('queues', past_expiration, 'queue'), expected)
+        self.assertEqual(self.lua('queues', past_expiration), [expected])
 
     def test_throttled(self):
         '''Discern throttled job counts correctly'''
@@ -497,21 +497,47 @@ class TestPeek(TestQless):
             'jid', 'jid2'])
 
     def test_basic_with_offset_and_count(self):
-        '''Can peek at a single waiting job'''
-        # No jobs for an empty queue
-        self.assertEqual(self.lua('peek', 0, 'foo', 0, 10), {})
+        '''Can peek jobs given an offset and a count'''
+        # No heartbeat or grace-period so popped jobs will immediately expire
+        self.lua('config.set', 0, 'grace-period', 0)
+        self.lua('config.set', 0, 'heartbeat', 0)
+
+        queue_name = 'peek_with_offset_and_count'
+        self.assertEqual(self.lua('peek', 0, queue_name, 0, 10), {})
+        now = 0
         for index in range(0, 20):
-            self.lua('put', index + 1, 'worker', 'foo', f'jid-{index}', 'klass', {}, 0)
-        # And now we should see a single job
-        self.assertEqual(len(self.lua('peek', 22, 'foo', 0, 10)), 10)
-        self.assertEqual(len(self.lua('peek', 23, 'foo', 0, 20)), 20)
-        self.assertEqual(len(self.lua('peek', 24, 'foo', 10, 10)), 10)
-        self.assertEqual([o['jid'] for o in self.lua('peek', 25, 'foo', 0, 3)], [
-            'jid-0', 'jid-1', 'jid-2'])
-        self.assertEqual([o['jid'] for o in self.lua('peek', 26, 'foo', 10, 3)], [
-            'jid-10', 'jid-11', 'jid-12'])
-        self.assertEqual([o['jid'] for o in self.lua('peek', 27, 'foo', 18, 3)], [
-            'jid-18', 'jid-19'])
+            now += 1
+            self.lua(
+                'put', now, 'worker', queue_name, f'jid-{index}', 'klass', {}, 0
+            )
+        # Pop 10 jobs which will expire immediately; expired jobs should take priority
+        jids = self.lua('pop', now + 1, queue_name, 'worker', 10)
+        self.assertEqual(len(jids), 10)
+        stalled = self.lua('jobs', now + 2, 'stalled', queue_name)
+        self.assertEqual(len(stalled), 10)
+        self.assertEqual(len(self.lua('peek', now + 3, queue_name, 0, 10)), 10)
+        self.assertEqual(len(self.lua('peek', now + 4, queue_name, 0, 20)), 20)
+        self.assertEqual(len(self.lua('peek', now + 5, queue_name, 10, 10)), 10)
+        self.assertEqual(
+            [o['jid'] for o in self.lua('peek', now + 6, queue_name, 0, 3)],
+            ['jid-0', 'jid-1', 'jid-2'],
+        )
+        self.assertEqual(
+            [o['jid'] for o in self.lua('peek', now + 7, queue_name, 10, 3)],
+            ['jid-10', 'jid-11', 'jid-12'],
+        )
+        self.assertEqual(
+            [o['jid'] for o in self.lua('peek', now + 8, queue_name, 18, 3)],
+            ['jid-18', 'jid-19'],
+        )
+        now += 8
+        # Peek one by one to try to catch off-by-one errors
+        for offset in range(0, 20):
+            now += 1
+            self.assertEqual(
+                [o['jid'] for o in self.lua('peek', now, queue_name, offset, 1)],
+                [f'jid-{offset}'],
+            )
 
     def test_priority(self):
         '''Peeking honors job priorities'''
