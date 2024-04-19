@@ -11,7 +11,7 @@ function Qless.queue(name)
   -- Access to our work
   queue.work = {
     peek = function(count)
-      if count == 0 then
+      if count <= 0 then
         return {}
       end
       local jids = {}
@@ -142,9 +142,9 @@ end
 -- Return the prefix for this particular queue
 function QlessQueue:prefix(group)
   if group then
-    return QlessQueue.ns..self.name..'-'..group
+    return QlessQueue.ns .. self.name .. '-' .. group
   else
-    return QlessQueue.ns..self.name
+    return QlessQueue.ns .. self.name
   end
 end
 
@@ -182,7 +182,7 @@ end
 -- those values.
 function QlessQueue:stats(now, date)
   date = assert(tonumber(date),
-    'Stats(): Arg "date" missing or not a number: '.. (date or 'nil'))
+    'Stats(): Arg "date" missing or not a number: ' .. (date or 'nil'))
 
   -- The bin is midnight of the provided day
   -- 24 * 60 * 60 = 86400
@@ -242,17 +242,27 @@ end
 -------
 -- Examine the next jobs that would be popped from the queue without actually
 -- popping them.
-function QlessQueue:peek(now, count)
+function QlessQueue:peek(now, offset, count)
+  offset = assert(tonumber(offset),
+    'Peek(): Arg "offset" missing or not a number: ' .. tostring(offset))
+
   count = assert(tonumber(count),
     'Peek(): Arg "count" missing or not a number: ' .. tostring(count))
 
+  if count <= 0 then
+    return {}
+  end
+
+  local count_with_offset = offset + count
+
   -- These are the ids that we're going to return. We'll begin with any jobs
   -- that have lost their locks
-  local jids = self.locks.expired(now, 0, count)
+  local jids = self.locks.expired(now, 0, count_with_offset)
+  local remaining_capacity = count_with_offset - #jids
 
   -- If we still need jobs in order to meet demand, then we should
   -- look for all the recurring jobs that need jobs run
-  self:check_recurring(now, count - #jids)
+  self:check_recurring(now, remaining_capacity)
 
   -- Now we've checked __all__ the locks for this queue the could
   -- have expired, and are no more than the number requested. If
@@ -260,13 +270,17 @@ function QlessQueue:peek(now, count)
   -- should check if any scheduled items, and if so, we should
   -- insert them to ensure correctness when pulling off the next
   -- unit of work.
-  self:check_scheduled(now, count - #jids)
+  self:check_scheduled(now, remaining_capacity)
 
   -- With these in place, we can expand this list of jids based on the work
   -- queue itself and the priorities therein
-  table_extend(jids, self.work.peek(count - #jids))
+  table_extend(jids, self.work.peek(remaining_capacity))
 
-  return jids
+  if #jids < offset then
+    return {}
+  end
+
+  return {unpack(jids, offset + 1, count_with_offset)}
 end
 
 -- Return true if this queue is paused
@@ -830,6 +844,9 @@ end
 
 -- Instantiate any recurring jobs that are ready
 function QlessQueue:check_recurring(now, count)
+  if count <= 0 then
+    return
+  end
   -- This is how many jobs we've moved so far
   local moved = 0
   -- These are the recurring jobs that need work
@@ -910,6 +927,9 @@ end
 -- the work queue. Returns nothing, but afterwards, up to `count`
 -- scheduled jobs will be moved into the work queue
 function QlessQueue:check_scheduled(now, count)
+  if count <= 0 then
+    return
+  end
   -- zadd is a list of arguments that we'll be able to use to
   -- insert into the work queue
   local scheduled = self.scheduled.ready(now, 0, count)

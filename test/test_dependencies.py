@@ -27,7 +27,7 @@ class TestDependencies(TestQless):
         # And now 'b' should be scheduled
         self.assertEqual(self.lua('get', 3, 'b')['state'], 'scheduled')
         # After we wait for the delay, it should be available
-        self.assertEqual(len(self.lua('peek', 1000, 'queue', 10)), 1)
+        self.assertEqual(len(self.lua('peek', 1000, 'queue', 0, 10)), 1)
         self.assertEqual(self.lua('get', 1001, 'b')['state'], 'waiting')
 
     def test_unlock_with_delay_satisfied(self):
@@ -49,7 +49,7 @@ class TestDependencies(TestQless):
         self.lua('complete', 6, 'b', 'worker', 'queue', {})
         # Now it should be scheduled
         self.assertEqual(self.lua('get', 7, 'a')['state'], 'scheduled')
-        self.assertEqual(len(self.lua('peek', 13, 'foo', 10)), 1)
+        self.assertEqual(len(self.lua('peek', 13, 'foo', 0, 10)), 1)
         self.assertEqual(self.lua('get', 14, 'a')['state'], 'waiting')
 
     def test_complete_depends(self):
@@ -65,7 +65,7 @@ class TestDependencies(TestQless):
         self.assertEqual(self.lua('get', 5, 'b')['dependencies'], ['a'])
         self.assertEqual(self.lua('get', 6, 'a')['dependents'], ['b'])
         # Only one job should be available
-        self.assertEqual(len(self.lua('peek', 7, 'queue', 10)), 1)
+        self.assertEqual(len(self.lua('peek', 7, 'queue', 0, 10)), 1)
 
     def test_satisfied_dependencies(self):
         '''If dependencies are already complete, it should be available'''
@@ -77,13 +77,13 @@ class TestDependencies(TestQless):
         # Now this job should be readily available
         self.lua('put', 4, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertEqual(self.lua('get', 5, 'b')['state'], 'waiting')
-        self.assertEqual(self.lua('peek', 6, 'queue', 10)[0]['jid'], 'b')
+        self.assertEqual(self.lua('peek', 6, 'queue', 0, 10)[0]['jid'], 'b')
 
     def test_nonexistent_dependencies(self):
         '''If dependencies don't exist, they're assumed completed'''
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertEqual(self.lua('get', 1, 'b')['state'], 'waiting')
-        self.assertEqual(self.lua('peek', 2, 'queue', 10)[0]['jid'], 'b')
+        self.assertEqual(self.lua('peek', 2, 'queue', 0, 10)[0]['jid'], 'b')
 
     def test_cancel_dependency_chain(self):
         '''If an entire dependency chain is cancelled together, it's ok'''

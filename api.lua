@@ -108,8 +108,8 @@ QlessAPI.log = function(now, jid, message, data)
   job:history(now, message, data)
 end
 
-QlessAPI.peek = function(now, queue, count)
-  local jids = Qless.queue(queue):peek(now, count)
+QlessAPI.peek = function(now, queue, offset, count)
+  local jids = Qless.queue(queue):peek(now, offset, count)
   local response = {}
   for i, jid in ipairs(jids) do
     table.insert(response, Qless.job(jid):data())
