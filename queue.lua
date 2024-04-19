@@ -14,12 +14,7 @@ function Qless.queue(name)
       if count <= 0 then
         return {}
       end
-      local jids = {}
-      for index, jid in ipairs(redis.call(
-        'zrevrange', queue:prefix('work'), 0, count - 1)) do
-        table.insert(jids, jid)
-      end
-      return jids
+      return redis.call('zrevrange', queue:prefix('work'), 0, count - 1)
     end, remove = function(...)
       if #arg > 0 then
         return redis.call('zrem', queue:prefix('work'), unpack(arg))
