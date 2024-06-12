@@ -266,7 +266,7 @@ class TestRetry(TestQless):
                         'worker': 'worker'},
             'history': [{'q': 'queue', 'what': 'put', 'when': 0},
                         {'what': 'popped', 'when': 0, 'worker': 'worker'},
-                        {'group': 'group', 'what': 'failed', 'when': 0}],
+                        {'group': 'group', 'what': 'failed-retries', 'when': 0}],
             'jid': 'jid',
             'klass': 'klass',
             'priority': 0,
@@ -317,7 +317,7 @@ class TestRetry(TestQless):
             'history': [
                 {'q': 'queue', 'what': 'put', 'when': 0},
                 {'what': 'popped', 'when': 0, 'worker': 'worker'},
-                {'group': 'failed-retries-queue', 'what': 'failed', 'when': 0}],
+                {'group': 'failed-retries-queue', 'what': 'failed-retries', 'when': 0}],
             'jid': 'jid',
             'klass': 'klass',
             'priority': 0,

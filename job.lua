@@ -451,7 +451,7 @@ function QlessJob:retry(now, queue_name, worker, delay, group, message)
     -- Now remove the instance from the schedule, and work queues for the
     -- queue it's in
     local group = group or 'failed-retries-' .. queue_name
-    self:history(now, 'failed', {group = group})
+    self:history(now, 'failed-retries', {group = group})
 
     redis.call('hmset', QlessJob.ns .. self.jid, 'state', 'failed',
       'worker', '',
