@@ -1045,11 +1045,10 @@ function QlessQueue:invalidate_locks(now, count)
         -- If the failure has not already been set, then set it
         redis.call('hset', QlessJob.ns .. jid,
         'failure', cjson.encode({
-          ['group']   = group,
-          ['message'] =
-            'Job exhausted retries in queue "' .. self.name .. '"',
-          ['when']    = now,
-          ['worker']  = unpack(job:data('worker'))
+          group   = group,
+          message = 'Job exhausted retries in queue "' .. self.name .. '"',
+          when    = now,
+          worker  = unpack(job:data('worker'))
         }))
 
         -- Add this type of failure to the list of failures

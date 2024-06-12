@@ -375,10 +375,10 @@ function QlessJob:fail(now, worker, group, message, data)
     'worker', '',
     'expires', '',
     'failure', cjson.encode({
-      ['group']   = group,
-      ['message'] = message,
-      ['when']    = math.floor(now),
-      ['worker']  = worker
+      group   = group,
+      message = message,
+      when    = math.floor(now),
+      worker  = worker
     }))
 
   self:throttles_release(now)
@@ -451,7 +451,7 @@ function QlessJob:retry(now, queue_name, worker, delay, group, message)
     -- Now remove the instance from the schedule, and work queues for the
     -- queue it's in
     local group = group or 'failed-retries-' .. queue_name
-    self:history(now, 'failed', {['group'] = group})
+    self:history(now, 'failed', {group = group})
 
     redis.call('hmset', QlessJob.ns .. self.jid, 'state', 'failed',
       'worker', '',
@@ -460,20 +460,19 @@ function QlessJob:retry(now, queue_name, worker, delay, group, message)
     if group ~= nil and message ~= nil then
       redis.call('hset', QlessJob.ns .. self.jid,
         'failure', cjson.encode({
-          ['group']   = group,
-          ['message'] = message,
-          ['when']    = math.floor(now),
-          ['worker']  = worker
+          group   = group,
+          message = message,
+          when    = math.floor(now),
+          worker  = worker
         })
       )
     else
       redis.call('hset', QlessJob.ns .. self.jid,
       'failure', cjson.encode({
-        ['group']   = group,
-        ['message'] =
-          'Job exhausted retries in queue "' .. old_queue_name .. '"',
-        ['when']    = now,
-        ['worker']  = unpack(self:data('worker'))
+        group   = group,
+        message = 'Job exhausted retries in queue "' .. old_queue_name .. '"',
+        when    = now,
+        worker  = unpack(self:data('worker'))
       }))
     end
 
@@ -500,10 +499,10 @@ function QlessJob:retry(now, queue_name, worker, delay, group, message)
     if group ~= nil and message ~= nil then
       redis.call('hset', QlessJob.ns .. self.jid,
         'failure', cjson.encode({
-          ['group']   = group,
-          ['message'] = message,
-          ['when']    = math.floor(now),
-          ['worker']  = worker
+          group   = group,
+          message = message,
+          when    = math.floor(now),
+          worker  = worker
         })
       )
     end
