@@ -18,7 +18,7 @@ class TestJob(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('log', 0, 'jid', 'foo', {'foo': 'bar'})
         self.assertEqual(self.lua('get', 0, 'jid')['history'], [
-            {'q': 'queue', 'what': 'put', 'when': 0},
+            {'queue': 'queue', 'what': 'put', 'when': 0},
             {'foo': 'bar', 'what': 'foo', 'when': 0}
         ])
 
@@ -33,11 +33,11 @@ class TestJob(TestQless):
         for index in range(100):
             self.lua('put', index, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('get', 0, 'jid')['history'], [
-            {'q': 'queue', 'what': 'put', 'when': 0},
-            {'q': 'queue', 'what': 'put', 'when': 96},
-            {'q': 'queue', 'what': 'put', 'when': 97},
-            {'q': 'queue', 'what': 'put', 'when': 98},
-            {'q': 'queue', 'what': 'put', 'when': 99}])
+            {'queue': 'queue', 'what': 'put', 'when': 0},
+            {'queue': 'queue', 'what': 'put', 'when': 96},
+            {'queue': 'queue', 'what': 'put', 'when': 97},
+            {'queue': 'queue', 'what': 'put', 'when': 98},
+            {'queue': 'queue', 'what': 'put', 'when': 99}])
 
 class TestRequeue(TestQless):
     def test_requeue_existing_job(self):
@@ -152,7 +152,7 @@ class TestComplete(TestQless):
             'dependents': {},
             'expires': 0,
             'failure': {},
-            'history': [{'q': 'queue', 'what': 'put', 'when': 0},
+            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
                         {'what': 'popped', 'when': 1, 'worker': 'worker'},
                         {'what': 'done', 'when': 2}],
             'jid': 'jid',

@@ -567,7 +567,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   }))
 
   -- Update the history to include this new change
-  job:history(now, 'put', {q = self.name})
+  job:history(now, 'put', {queue = self.name})
 
   -- If this item was previously in another queue, then we should remove it from there
   -- and remove the associated throttle
@@ -715,7 +715,7 @@ function QlessQueue:unfail(now, group, count)
   for _, jid in ipairs(jids) do
     local job = Qless.job(jid)
     local data = job:data()
-    job:history(now, 'put', {q = self.name})
+    job:history(now, 'put', {queue = self.name})
     redis.call('hmset', QlessJob.ns .. data.jid,
       'state'    , 'waiting',
       'worker'   , '',
@@ -913,7 +913,7 @@ function QlessQueue:check_recurring(now, count)
         'throttles', throttles,
         'spawned_from_jid', jid)
 
-      Qless.job(child_jid):history(score, 'put', {q = self.name})
+      Qless.job(child_jid):history(score, 'put', {queue = self.name})
 
       -- Now, if a delay was provided, and if it's in the future,
       -- then we'll have to schedule it. Otherwise, we're just

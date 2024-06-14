@@ -38,7 +38,7 @@ class TestTrack(TestQless):
                 'remaining': 5,
                 'spawned_from_jid': False,
                 'history': [{
-                    'q': 'queue', 'what': 'put', 'when': 0
+                    'queue': 'queue', 'what': 'put', 'when': 0
                 }]
             }], 'expired': {}})
 

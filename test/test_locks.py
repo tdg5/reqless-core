@@ -45,7 +45,7 @@ class TestLocks(TestQless):
                 'expires': 131,
                 'failure': {},
                 'history': [
-                    {'q': 'queue', 'what': 'put', 'when': 0},
+                    {'queue': 'queue', 'what': 'put', 'when': 0},
                     {'what': 'popped', 'when': 1, 'worker': 'worker'},
                     {'what': 'timed-out', 'when': 71},
                     {'what': 'popped', 'when': 71, 'worker': 'another'}],
@@ -264,7 +264,7 @@ class TestRetry(TestQless):
                         'message': 'message',
                         'when': 0,
                         'worker': 'worker'},
-            'history': [{'q': 'queue', 'what': 'put', 'when': 0},
+            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
                         {'what': 'popped', 'when': 0, 'worker': 'worker'},
                         {'group': 'group', 'what': 'failed-retries', 'when': 0}],
             'jid': 'jid',
@@ -315,7 +315,7 @@ class TestRetry(TestQless):
                 'when': 0,
                 'worker': u''},
             'history': [
-                {'q': 'queue', 'what': 'put', 'when': 0},
+                {'queue': 'queue', 'what': 'put', 'when': 0},
                 {'what': 'popped', 'when': 0, 'worker': 'worker'},
                 {'group': 'failed-retries-queue', 'what': 'failed-retries', 'when': 0}],
             'jid': 'jid',

@@ -30,7 +30,7 @@ class TestFail(TestQless):
                         'message': 'message',
                         'when': 2,
                         'worker': 'worker'},
-            'history': [{'q': 'queue', 'what': 'put', 'when': 0},
+            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
                         {'what': 'popped', 'when': 1, 'worker': 'worker'},
                         {'group': 'group',
                          'what': 'failed',

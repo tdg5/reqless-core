@@ -159,7 +159,7 @@ function QlessJob:complete(now, worker, queue_name, raw_data, ...)
     }))
 
     -- Enqueue the job
-    self:history(now, 'put', {q = next_queue_name})
+    self:history(now, 'put', {queue = next_queue_name})
 
     -- We're going to make sure that this queue is in the
     -- set of known queues
@@ -725,7 +725,7 @@ function QlessJob:history(now, what, item)
     history = cjson.decode(history)
     for _, value in ipairs(history) do
       redis.call('rpush', QlessJob.ns .. self.jid .. '-history',
-        cjson.encode({math.floor(value.put), 'put', {q = value.q}}))
+        cjson.encode({math.floor(value.put), 'put', {queue = value.queue}}))
 
       -- If there's any popped time
       if value.popped then
