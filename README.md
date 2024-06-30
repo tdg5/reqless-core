@@ -229,7 +229,7 @@ job is stored in `ql:j:<jid>-dependents`. For example, `ql:j:<jid>`:
 		# what code to run. For instance, it might be 'foo.bar.FooJob'
 		'type'        : '...',
 
-		# This is the priority of the job -- lower means more priority.
+		# This is the priority of the job -- higher means more priority.
 		# The default is 0
 		'priority'    : 0,
 
