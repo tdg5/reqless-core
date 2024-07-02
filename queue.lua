@@ -138,9 +138,9 @@ end
 function QlessQueue:prefix(group)
   if group then
     return QlessQueue.ns .. self.name .. '-' .. group
-  else
-    return QlessQueue.ns .. self.name
   end
+
+  return QlessQueue.ns .. self.name
 end
 
 -- Stats(now, date)
@@ -274,16 +274,16 @@ function QlessQueue:peek(now, offset, count)
     -- Offset takes us past the expired jids, so just return straight from the
     -- work queue
     return self.work.peek(offset - #jids, count)
-  else
-    -- Return a mix of expired jids and prioritized items from the work queue
-    table_extend(jids, self.work.peek(0, remaining_capacity))
-
-    if #jids < offset then
-      return {}
-    end
-
-    return {unpack(jids, offset + 1, count_with_offset)}
   end
+
+  -- Return a mix of expired jids and prioritized items from the work queue
+  table_extend(jids, self.work.peek(0, remaining_capacity))
+
+  if #jids < offset then
+    return {}
+  end
+
+  return {unpack(jids, offset + 1, count_with_offset)}
 end
 
 -- Return true if this queue is paused
@@ -824,9 +824,9 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     end
 
     return jid
-  else
-    error('Recur(): schedule type "' .. tostring(spec) .. '" unknown')
   end
+
+  error('Recur(): schedule type "' .. tostring(spec) .. '" unknown')
 end
 
 -- Return the length of the queue
@@ -1119,12 +1119,12 @@ function QlessQueue.counts(now, name)
       recurring = queue.recurring.length(),
       paused    = queue:paused()
     }
-  else
-    local queues = redis.call('zrange', 'ql:queues', 0, -1)
-    local response = {}
-    for _, qname in ipairs(queues) do
-      table.insert(response, QlessQueue.counts(now, qname))
-    end
-    return response
   end
+
+  local queues = redis.call('zrange', 'ql:queues', 0, -1)
+  local response = {}
+  for _, qname in ipairs(queues) do
+    table.insert(response, QlessQueue.counts(now, qname))
+  end
+  return response
 end

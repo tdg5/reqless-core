@@ -50,16 +50,16 @@ function QlessWorker.counts(now, worker)
       jobs    = redis.call('zrevrangebyscore', 'ql:w:' .. worker .. ':jobs', now + 8640000, now),
       stalled = redis.call('zrevrangebyscore', 'ql:w:' .. worker .. ':jobs', now, 0)
     }
-  else
-    local response = {}
-    local workers = redis.call('zrevrange', 'ql:workers', 0, -1)
-    for _, worker in ipairs(workers) do
-      table.insert(response, {
-        name    = worker,
-        jobs    = redis.call('zcount', 'ql:w:' .. worker .. ':jobs', now, now + 8640000),
-        stalled = redis.call('zcount', 'ql:w:' .. worker .. ':jobs', 0, now)
-      })
-    end
-    return response
   end
+
+  local response = {}
+  local workers = redis.call('zrevrange', 'ql:workers', 0, -1)
+  for _, worker in ipairs(workers) do
+    table.insert(response, {
+      name    = worker,
+      jobs    = redis.call('zcount', 'ql:w:' .. worker .. ':jobs', now, now + 8640000),
+      stalled = redis.call('zcount', 'ql:w:' .. worker .. ':jobs', 0, now)
+    })
+  end
+  return response
 end

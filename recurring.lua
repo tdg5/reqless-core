@@ -92,9 +92,9 @@ function QlessRecurringJob:update(now, ...)
       end
     end
     return true
-  else
-    error('Recur(): No recurring job ' .. self.jid)
   end
+
+  error('Recur(): No recurring job ' .. self.jid)
 end
 
 -- Tags this recurring job with the provided tags
@@ -113,9 +113,9 @@ function QlessRecurringJob:tag(...)
     tags = cjson.encode(tags)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
     return tags
-  else
-    error('Tag(): Job ' .. self.jid .. ' does not exist')
   end
+
+  error('Tag(): Job ' .. self.jid .. ' does not exist')
 end
 
 -- Removes a tag from the recurring job
@@ -138,9 +138,9 @@ function QlessRecurringJob:untag(...)
     tags = cjson.encode(results)
     redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
     return tags
-  else
-    error('Untag(): Job ' .. self.jid .. ' does not exist')
   end
+
+  error('Untag(): Job ' .. self.jid .. ' does not exist')
 end
 
 -- Stop further occurrences of this job
@@ -153,7 +153,7 @@ function QlessRecurringJob:unrecur()
     Qless.queue(queue).recurring.remove(self.jid)
     redis.call('del', 'ql:r:' .. self.jid)
     return true
-  else
-    return true
   end
+
+  return true
 end

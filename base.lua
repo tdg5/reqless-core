@@ -157,15 +157,15 @@ function Qless.failed(group, start, limit)
       total = redis.call('llen', 'ql:f:' .. group),
       jobs  = redis.call('lrange', 'ql:f:' .. group, start, start + limit - 1)
     }
-  else
-    -- Otherwise, we should just list all the known failure groups we have
-    local response = {}
-    local groups = redis.call('smembers', 'ql:failures')
-    for _, group in ipairs(groups) do
-      response[group] = redis.call('llen', 'ql:f:' .. group)
-    end
-    return response
   end
+
+  -- Otherwise, we should just list all the known failure groups we have
+  local response = {}
+  local groups = redis.call('smembers', 'ql:failures')
+  for _, group in ipairs(groups) do
+    response[group] = redis.call('llen', 'ql:f:' .. group)
+  end
+  return response
 end
 
 -- Jobs(now, 'complete', [offset, [count]])
@@ -190,31 +190,31 @@ function Qless.jobs(now, state, ...)
       'Jobs(): Arg "count" not a number: ' .. tostring(arg[2]))
     return redis.call('zrevrange', 'ql:completed', offset,
       offset + count - 1)
-  else
-    local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
-    local offset = assert(tonumber(arg[2] or 0),
-      'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
-    local count  = assert(tonumber(arg[3] or 25),
-      'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
-
-    local queue = Qless.queue(name)
-    if state == 'running' then
-      return queue.locks.peek(now, offset, count)
-    elseif state == 'stalled' then
-      return queue.locks.expired(now, offset, count)
-    elseif state == 'throttled' then
-      return queue.throttled.peek(now, offset, count)
-    elseif state == 'scheduled' then
-      queue:check_scheduled(now, queue.scheduled.length())
-      return queue.scheduled.peek(now, offset, count)
-    elseif state == 'depends' then
-      return queue.depends.peek(now, offset, count)
-    elseif state == 'recurring' then
-      return queue.recurring.peek(math.huge, offset, count)
-    else
-      error('Jobs(): Unknown type "' .. state .. '"')
-    end
   end
+
+  local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
+  local offset = assert(tonumber(arg[2] or 0),
+    'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
+  local count  = assert(tonumber(arg[3] or 25),
+    'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
+
+  local queue = Qless.queue(name)
+  if state == 'running' then
+    return queue.locks.peek(now, offset, count)
+  elseif state == 'stalled' then
+    return queue.locks.expired(now, offset, count)
+  elseif state == 'throttled' then
+    return queue.throttled.peek(now, offset, count)
+  elseif state == 'scheduled' then
+    queue:check_scheduled(now, queue.scheduled.length())
+    return queue.scheduled.peek(now, offset, count)
+  elseif state == 'depends' then
+    return queue.depends.peek(now, offset, count)
+  elseif state == 'recurring' then
+    return queue.recurring.peek(math.huge, offset, count)
+  end
+
+  error('Jobs(): Unknown type "' .. state .. '"')
 end
 
 -- Track()
@@ -253,25 +253,24 @@ function Qless.track(now, command, jid)
     elseif string.lower(command) == 'untrack' then
       Qless.publish('untrack', jid)
       return redis.call('zrem', 'ql:tracked', jid)
-    else
-      error('Track(): Unknown action "' .. command .. '"')
     end
-  else
-    local response = {
-      jobs = {},
-      expired = {},
-    }
-    local jids = redis.call('zrange', 'ql:tracked', 0, -1)
-    for _, jid in ipairs(jids) do
-      local data = Qless.job(jid):data()
-      if data then
-        table.insert(response.jobs, data)
-      else
-        table.insert(response.expired, jid)
-      end
-    end
-    return response
+    error('Track(): Unknown action "' .. command .. '"')
   end
+
+  local response = {
+    jobs = {},
+    expired = {},
+  }
+  local jids = redis.call('zrange', 'ql:tracked', 0, -1)
+  for _, jid in ipairs(jids) do
+    local data = Qless.job(jid):data()
+    if data then
+      table.insert(response.jobs, data)
+    else
+      table.insert(response.expired, jid)
+    end
+  end
+  return response
 end
 
 -- tag(now, ('add' | 'remove'), jid, tag, [tag, ...])
@@ -323,9 +322,9 @@ function Qless.tag(now, command, ...)
 
       redis.call('hset', QlessJob.ns .. jid, 'tags', cjson.encode(tags))
       return tags
-    else
-      error('Tag(): Job ' .. jid .. ' does not exist')
     end
+
+    error('Tag(): Job ' .. jid .. ' does not exist')
   elseif command == 'remove' then
     local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
     local tags = redis.call('hget', QlessJob.ns .. jid, 'tags')
@@ -352,9 +351,8 @@ function Qless.tag(now, command, ...)
 
       redis.call('hset', QlessJob.ns .. jid, 'tags', cjson.encode(results))
       return results
-    else
-      error('Tag(): Job ' .. jid .. ' does not exist')
     end
+    error('Tag(): Job ' .. jid .. ' does not exist')
   elseif command == 'get' then
     local tag    = assert(arg[1], 'Tag(): Arg "tag" missing')
     local offset = assert(tonumber(arg[2] or 0),
@@ -369,9 +367,9 @@ function Qless.tag(now, command, ...)
     local offset = assert(tonumber(arg[1] or 0) , 'Tag(): Arg "offset" not a number: ' .. tostring(arg[1]))
     local count  = assert(tonumber(arg[2] or 25), 'Tag(): Arg "count" not a number: ' .. tostring(arg[2]))
     return redis.call('zrevrangebyscore', 'ql:tags', '+inf', 2, 'limit', offset, count)
-  else
-    error('Tag(): First argument must be "add", "remove" or "get"')
   end
+
+  error('Tag(): First argument must be "add", "remove" or "get"')
 end
 
 -- Cancel(...)

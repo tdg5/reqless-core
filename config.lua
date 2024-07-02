@@ -18,14 +18,14 @@ Qless.config.get = function(key, default)
   if key then
     return redis.call('hget', 'ql:config', key) or
       Qless.config.defaults[key] or default
-  else
-    -- Inspired by redis-lua https://github.com/nrk/redis-lua/blob/version-2.0/src/redis.lua
-    local reply = redis.call('hgetall', 'ql:config')
-    for i = 1, #reply, 2 do
-      Qless.config.defaults[reply[i]] = reply[i + 1]
-    end
-    return Qless.config.defaults
   end
+
+  -- Inspired by redis-lua https://github.com/nrk/redis-lua/blob/version-2.0/src/redis.lua
+  local reply = redis.call('hgetall', 'ql:config')
+  for i = 1, #reply, 2 do
+    Qless.config.defaults[reply[i]] = reply[i + 1]
+  end
+  return Qless.config.defaults
 end
 
 -- Set a configuration variable
