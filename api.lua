@@ -54,6 +54,10 @@ QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
+QlessAPI['job.priority'] = function(now, jid, priority)
+  return Qless.job(jid):priority(priority)
+end
+
 QlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
   return Qless.job(jid):retry(now, queue, worker, delay, group, message)
 end
@@ -92,10 +96,6 @@ end
 
 QlessAPI.stats = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
-end
-
-QlessAPI.priority = function(now, jid, priority)
-  return Qless.job(jid):priority(priority)
 end
 
 -- Add logging to a particular jid
@@ -298,6 +298,11 @@ end
 -- Deprecated. Use job.getMulti instead.
 function QlessAPI.multiget(now, ...)
   return QlessAPI['job.getMulti'](now, unpack(arg))
+end
+
+-- Deprecated. Use job.priority instead.
+QlessAPI.priority = function(now, jid, priority)
+  return QlessAPI['job.priority'](now, jid, priority)
 end
 
 -- Deprecated. Use queue.counts or queues.list instead.

@@ -6,11 +6,11 @@ from common import TestQless
 class TestJob(TestQless):
     '''Some general jobby things'''
     def test_malformed(self):
-        '''Enumerate all malformed input to priority'''
+        '''Enumerate all malformed input to job.priority'''
         self.assertMalformed(self.lua, [
-            ('priority', '0'),
-            ('priority', '0', 'jid'),
-            ('priority', '0', 'jid', 'foo')
+            ('job.priority', '0'),
+            ('job.priority', '0', 'jid'),
+            ('job.priority', '0', 'jid', 'foo')
         ])
 
     def test_log(self):

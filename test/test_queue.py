@@ -602,6 +602,16 @@ class TestPeek(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'priority', 1)
         self.assertEqual(['b', 'a'],
             [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
+        self.lua('job.priority', 0, 'a', 2)
+        self.assertEqual(['a', 'b'],
+            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
+
+    def test_priority_still_works(self):
+        '''Deprecated priority API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0, 'priority', 0)
+        self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'priority', 1)
+        self.assertEqual(['b', 'a'],
+            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
         self.lua('priority', 0, 'a', 2)
         self.assertEqual(['a', 'b'],
             [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
