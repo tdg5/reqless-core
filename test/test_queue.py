@@ -7,24 +7,26 @@ class TestJobs(TestQless):
     def test_malformed(self):
         '''Enumerate all the ways that the input can be malformed'''
         self.assertMalformed(self.lua, [
-            ('jobs', 0, 'complete', 'foo'),
-            ('jobs', 0, 'complete', 0, 'foo'),
-            ('jobs', 0, 'running'),
-            ('jobs', 0, 'running', 'queue', 'foo'),
-            ('jobs', 0, 'running', 'queue', 0, 'foo'),
-            ('jobs', 0, 'stalled'),
-            ('jobs', 0, 'stalled`', 'queue', 'foo'),
-            ('jobs', 0, 'stalled', 'queue', 0, 'foo'),
-            ('jobs', 0, 'scheduled'),
-            ('jobs', 0, 'scheduled', 'queue', 'foo'),
-            ('jobs', 0, 'scheduled', 'queue', 0, 'foo'),
-            ('jobs', 0, 'depends'),
-            ('jobs', 0, 'depends', 'queue', 'foo'),
-            ('jobs', 0, 'depends', 'queue', 0, 'foo'),
-            ('jobs', 0, 'recurring'),
-            ('jobs', 0, 'recurring', 'queue', 'foo'),
-            ('jobs', 0, 'recurring', 'queue', 0, 'foo'),
-            ('jobs', 0, 'foo', 'queue', 0, 25)
+            ('jobs.completed', 0, 'foo'),
+            ('jobs.completed', 0, 0, 'foo'),
+            ('jobs.completed', 0, 'foo'),
+            ('jobs.completed', 0, 0, 'foo'),
+            ('queue.jobsByState', 0, 'running'),
+            ('queue.jobsByState', 0, 'running', 'queue', 'foo'),
+            ('queue.jobsByState', 0, 'running', 'queue', 0, 'foo'),
+            ('queue.jobsByState', 0, 'stalled'),
+            ('queue.jobsByState', 0, 'stalled`', 'queue', 'foo'),
+            ('queue.jobsByState', 0, 'stalled', 'queue', 0, 'foo'),
+            ('queue.jobsByState', 0, 'scheduled'),
+            ('queue.jobsByState', 0, 'scheduled', 'queue', 'foo'),
+            ('queue.jobsByState', 0, 'scheduled', 'queue', 0, 'foo'),
+            ('queue.jobsByState', 0, 'depends'),
+            ('queue.jobsByState', 0, 'depends', 'queue', 'foo'),
+            ('queue.jobsByState', 0, 'depends', 'queue', 0, 'foo'),
+            ('queue.jobsByState', 0, 'recurring'),
+            ('queue.jobsByState', 0, 'recurring', 'queue', 'foo'),
+            ('queue.jobsByState', 0, 'recurring', 'queue', 0, 'foo'),
+            ('queue.jobsByState', 0, 'foo', 'queue', 0, 25)
         ])
 
     def test_complete(self):
@@ -34,7 +36,7 @@ class TestJobs(TestQless):
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
             self.lua('job.complete', jid, jid, 'worker', 'queue', {})
-            complete = self.lua('jobs', jid, 'complete')
+            complete = self.lua('jobs.completed', jid)
             self.assertEqual(len(complete), int(jid) + 1)
             self.assertEqual(int(complete[0]), int(jid))
 
@@ -44,7 +46,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
-            running = self.lua('jobs', jid, 'running', 'queue')
+            running = self.lua('queue.jobsByState', jid, 'running', 'queue')
             self.assertEqual(len(running), int(jid) + 1)
             self.assertEqual(int(running[-1]), int(jid))
 
@@ -55,7 +57,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
-            stalled = self.lua('jobs', int(jid) + 20, 'stalled', 'queue')
+            stalled = self.lua('queue.jobsByState', int(jid) + 20, 'stalled', 'queue')
             self.assertEqual(len(stalled), int(jid) + 1)
             self.assertEqual(int(stalled[-1]), int(jid))
 
@@ -64,7 +66,7 @@ class TestJobs(TestQless):
         jids = map(str, range(1, 11))
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, jid)
-            scheduled = self.lua('jobs', 0, 'scheduled', 'queue')
+            scheduled = self.lua('queue.jobsByState', 0, 'scheduled', 'queue')
             self.assertEqual(len(scheduled), int(jid))
             self.assertEqual(int(scheduled[-1]), int(jid))
 
@@ -75,7 +77,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua(
                 'put', jid, 'worker', 'queue', jid, 'klass', {}, 0, 'depends', ['a'])
-            depends = self.lua('jobs', 0, 'depends', 'queue')
+            depends = self.lua('queue.jobsByState', 0, 'depends', 'queue')
             self.assertEqual(len(depends), int(jid) + 1)
             self.assertEqual(int(depends[-1]), int(jid))
 
@@ -85,7 +87,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua(
                 'recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 0)
-            recurring = self.lua('jobs', 0, 'recurring', 'queue')
+            recurring = self.lua('queue.jobsByState', 0, 'recurring', 'queue')
             self.assertEqual(len(recurring), int(jid) + 1)
             self.assertEqual(int(recurring[-1]), int(jid))
 
@@ -95,14 +97,14 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua(
                 'recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 10)
-            recurring = self.lua('jobs', 0, 'recurring', 'queue')
+            recurring = self.lua('queue.jobsByState', 0, 'recurring', 'queue')
             self.assertEqual(len(recurring), int(jid) + 1)
             self.assertEqual(int(recurring[-1]), int(jid))
 
     def test_scheduled_waiting(self):
         '''Jobs that were scheduled but are ready shouldn't be in scheduled'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
-        self.assertEqual(len(self.lua('jobs', 20, 'scheduled', 'queue')), 0)
+        self.assertEqual(len(self.lua('queue.jobsByState', 20, 'scheduled', 'queue')), 0)
 
     def test_pagination_complete(self):
         '''Jobs should be able to provide paginated results for complete'''
@@ -114,10 +116,10 @@ class TestJobs(TestQless):
         # Get two pages and ensure they're what we expect
         jids = list(reversed(jids))
         self.assertEqual(
-            list(map(int, self.lua('jobs', 0, 'complete',  0, 50))),
+            list(map(int, self.lua('jobs.completed', 0,  0, 50))),
             list(map(int, jids[:50])))
         self.assertEqual(
-            list(map(int, self.lua('jobs', 0, 'complete', 50, 50))),
+            list(map(int, self.lua('jobs.completed', 0, 50, 50))),
             list(map(int, jids[50:])))
 
     def test_pagination_running(self):
@@ -129,10 +131,26 @@ class TestJobs(TestQless):
             self.lua('pop', jid, 'queue', 'worker', 10)
         # Get two pages and ensure they're what we expect
         self.assertEqual(
-            list(map(int, self.lua('jobs', 100, 'running', 'queue',  0, 50))),
+            list(map(int, self.lua('queue.jobsByState', 100, 'running', 'queue',  0, 50))),
             list(map(int, jids[:50])))
         self.assertEqual(
-            list(map(int, self.lua('jobs', 100, 'running', 'queue', 50, 50))),
+            list(map(int, self.lua('queue.jobsByState', 100, 'running', 'queue', 50, 50))),
+            list(map(int, jids[50:])))
+
+    def test_jobs_still_works(self):
+        '''Deprecated jobs API still works'''
+        jids = list(map(str, range(100)))
+        for jid in jids:
+            self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
+            self.lua('pop', jid, 'queue', 'worker', 10)
+            self.lua('job.complete', jid, jid, 'worker', 'queue', {})
+        # Get two pages and ensure they're what we expect
+        jids = list(reversed(jids))
+        self.assertEqual(
+            list(map(int, self.lua('jobs', 0, 'complete', 0, 50))),
+            list(map(int, jids[:50])))
+        self.assertEqual(
+            list(map(int, self.lua('jobs', 0, 'complete', 50, 50))),
             list(map(int, jids[50:])))
 
 
@@ -521,7 +539,7 @@ class TestPeek(TestQless):
         # Pop 10 jobs which will expire immediately; expired jobs should take priority
         jids = self.lua('pop', now + 1, queue_name, 'worker', 10)
         self.assertEqual(len(jids), 10)
-        stalled = self.lua('jobs', now + 2, 'stalled', queue_name)
+        stalled = self.lua('queue.jobsByState', now + 2, 'stalled', queue_name)
         self.assertEqual(len(stalled), 10)
         self.assertEqual(len(self.lua('peek', now + 3, queue_name, 0, 10)), 10)
         self.assertEqual(len(self.lua('peek', now + 4, queue_name, 0, 20)), 20)
@@ -725,7 +743,7 @@ class TestPop(TestQless):
         self.lua('put', 1, 'worker', 'queue', 'jid2', 'klass', {}, 0)
         self.lua('pop', 2, 'queue', 'worker', 2)
         self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
-        self.assertEqual(self.lua('jobs', 4, 'throttled', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), [b'jid2'])
 
     def test_throttled_removed(self):
         '''Throttled jobs are removed from throttled when concurrency available'''
@@ -735,15 +753,15 @@ class TestPop(TestQless):
         self.lua('pop', 2, 'queue', 'worker', 2)
         self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
         self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), [b'jid2'])
-        self.assertEqual(self.lua('jobs', 5, 'throttled', 'queue'), [b'jid2'])
-        self.assertEqual(self.lua('jobs', 5, 'running', 'queue'), [b'jid1'])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'throttled', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), [b'jid1'])
         self.lua('job.complete', 7, 'jid1', 'worker', 'queue', {})
-        self.assertEqual(self.lua('jobs', 8, 'throttled', 'queue'), [])
+        self.assertEqual(self.lua('queue.jobsByState', 8, 'throttled', 'queue'), [])
         self.lua('pop', 10, 'queue', 'worker', 1)
         self.assertEqual(self.lua('throttle.locks',11, 'ql:q:queue'), [b'jid2'])
         self.assertEqual(self.lua('throttle.pending', 12, 'ql:q:queue'), [])
-        self.assertEqual(self.lua('jobs', 13, 'throttled', 'queue'), [])
-        self.assertEqual(self.lua('jobs', 5, 'running', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 13, 'throttled', 'queue'), [])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), [b'jid2'])
 
     def test_throttled_additional_put(self):
         '''put should attempt to throttle the job immediately'''
@@ -752,7 +770,7 @@ class TestPop(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 1)
         self.lua('put', 2, 'worker', 'queue', 'jid2', 'klass', {}, 0)
         self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
-        self.assertEqual(self.lua('jobs', 4, 'throttled', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), [b'jid2'])
 
     def test_pop_no_retry(self):
         '''Pop is not retried when limit unset'''

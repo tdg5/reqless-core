@@ -52,6 +52,10 @@ QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
+QlessAPI["jobs.completed"] = function(now, offset, limit)
+  return Qless.jobs(now, 'complete', offset, limit)
+end
+
 QlessAPI['jobs.failed'] = function(now, group, start, limit)
   return cjson.encode(Qless.failed(group, start, limit))
 end
@@ -60,12 +64,12 @@ QlessAPI['queue.counts'] = function(now, queue)
   return cjson.encode(QlessQueue.counts(now, queue))
 end
 
-QlessAPI['queues.list'] = function(now)
-  return cjson.encode(QlessQueue.counts(now, nil))
+QlessAPI["queue.jobsByState"] = function(now, state, ...)
+  return Qless.jobs(now, state, unpack(arg))
 end
 
-QlessAPI.jobs = function(now, state, ...)
-  return Qless.jobs(now, state, unpack(arg))
+QlessAPI['queues.list'] = function(now)
+  return cjson.encode(QlessQueue.counts(now, nil))
 end
 
 QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
@@ -278,6 +282,14 @@ end
 -- Deprecated. Use job.heartbeat instead.
 QlessAPI.heartbeat = function(now, jid, worker, data)
   return QlessAPI['job.heartbeat'](now, jid, worker, data)
+end
+
+-- Deprecated. Use jobs.completed or queue.jobs.byState instead.
+QlessAPI.jobs = function(now, state, ...)
+  if state == 'complete' then
+    return QlessAPI['jobs.completed'](now, unpack(arg))
+  end
+  return QlessAPI['queue.jobsByState'](now, state, unpack(arg))
 end
 
 -- Deprecated. Use job.getMulti instead.
