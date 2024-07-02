@@ -4,15 +4,6 @@
 -------------------------------------------------------------------------------
 local QlessAPI = {}
 
--- Return json blob of data or nil for each jid provided
-function QlessAPI.multiget(now, ...)
-  local results = {}
-  for _, jid in ipairs(arg) do
-    table.insert(results, Qless.job(jid):data())
-  end
-  return cjson.encode(results)
-end
-
 -- Public access
 QlessAPI['config.get'] = function(now, key)
   if not key then
@@ -38,6 +29,15 @@ QlessAPI['job.get'] = function(now, jid)
   if data then
     return cjson.encode(data)
   end
+end
+
+-- Return json blob of data or nil for each jid provided
+QlessAPI['job.getMulti'] = function(now, ...)
+  local results = {}
+  for _, jid in ipairs(arg) do
+    table.insert(results, Qless.job(jid):data())
+  end
+  return cjson.encode(results)
 end
 
 -- Get information about a queue or queues
@@ -255,6 +255,11 @@ end
 -- Deprecated. Use job.get instead.
 function QlessAPI.get(now, jid)
   return QlessAPI['job.get'](now, jid)
+end
+
+-- Deprecated. Use job.getMulti instead.
+function QlessAPI.multiget(now, ...)
+  return QlessAPI['job.getMulti'](now, unpack(arg))
 end
 
 -------------------------------------------------------------------------------

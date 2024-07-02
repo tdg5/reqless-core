@@ -53,12 +53,19 @@ class TestRequeue(TestQless):
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
             self.lua, 'requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
 
+
+    def test_multiget_still_works(self):
+        '''Deprecated multiget API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('put', 1, 'worker', 'queue', 'jid2', 'klass', {}, 0)
+        self.assertEqual(2, len(self.lua('multiget', 2, 'jid', 'jid2')))
+
     def test_requeue_throttled_job(self):
         '''Requeueing  a throttled job should maintain correct state'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
-        original = self.lua('multiget', 1, 'jid')[0]
+        original = self.lua('job.getMulti', 1, 'jid')[0]
         self.lua('requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
-        updated = self.lua('multiget', 3, 'jid')[0]
+        updated = self.lua('job.getMulti', 3, 'jid')[0]
 
         # throttles and queue change during requeue
         self.assertEqual(updated['throttles'], ['tid', 'ql:q:queue-2'])
