@@ -83,12 +83,12 @@ class TestAcquire(TestQless):
   '''Test that a job has a default queue throttle'''
   def test_default_queue_throttle(self):
     self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-    self.assertEqual(self.lua('get', 0, 'jid')['throttles'], ['ql:q:queue'])
+    self.assertEqual(self.lua('job.get', 0, 'jid')['throttles'], ['ql:q:queue'])
 
   '''Test that job can specify a throttle'''
   def test_specify_throttle(self):
     self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
-    self.assertEqual(self.lua('get', 0, 'jid')['throttles'], ['tid', 'ql:q:queue'])
+    self.assertEqual(self.lua('job.get', 0, 'jid')['throttles'], ['tid', 'ql:q:queue'])
 
   '''Test that a job can acquire a throttle'''
   def test_acquire_throttle(self):

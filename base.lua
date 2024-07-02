@@ -230,7 +230,7 @@ end
 --      'jobs': [
 --          {
 --              'jid': ...,
---              # All the other details you'd get from 'get'
+--              # All the other details you'd get from 'job.get'
 --          }, {
 --              ...
 --          }

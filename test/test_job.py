@@ -17,7 +17,7 @@ class TestJob(TestQless):
         '''Can add a log to a job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('log', 0, 'jid', 'foo', {'foo': 'bar'})
-        self.assertEqual(self.lua('get', 0, 'jid')['history'], [
+        self.assertEqual(self.lua('job.get', 0, 'jid')['history'], [
             {'queue': 'queue', 'what': 'put', 'when': 0},
             {'foo': 'bar', 'what': 'foo', 'when': 0}
         ])
@@ -32,7 +32,7 @@ class TestJob(TestQless):
         self.lua('config.set', 0, 'max-job-history', 5)
         for index in range(100):
             self.lua('put', index, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('get', 0, 'jid')['history'], [
+        self.assertEqual(self.lua('job.get', 0, 'jid')['history'], [
             {'queue': 'queue', 'what': 'put', 'when': 0},
             {'queue': 'queue', 'what': 'put', 'when': 96},
             {'queue': 'queue', 'what': 'put', 'when': 97},
@@ -44,7 +44,7 @@ class TestRequeue(TestQless):
         '''Requeueing an existing job is identical to `put`'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('get', 0, 'jid')['queue'], 'queue-2')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['queue'], 'queue-2')
 
     def test_requeue_cancelled_job(self):
         '''Requeueing a cancelled (or non-existent) job fails'''
@@ -133,20 +133,27 @@ class TestComplete(TestQless):
         self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
         self.lua('put', 3, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 4, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('get', 5, 'jid')['failure'], {
+        self.assertEqual(self.lua('job.get', 5, 'jid')['failure'], {
             'group': 'group',
             'message': 'message',
             'when': 2,
             'worker': 'worker'})
         self.lua('complete', 6, 'jid', 'worker', 'queue', {})
-        self.assertEqual(self.lua('get', 7, 'jid')['failure'], {})
+        self.assertEqual(self.lua('job.get', 7, 'jid')['failure'], {})
+
+    def test_get_still_works(self):
+        '''Deprecated get API still works'''
+        jid = 'get_still_works_jid'
+        self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
+        job = self.lua('get', 3, jid)
+        self.assertEqual(jid, job['jid'])
 
     def test_basic(self):
         '''Basic completion'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('complete', 2, 'jid', 'worker', 'queue', {})
-        self.assertEqual(self.lua('get', 3, 'jid'), {
+        self.assertEqual(self.lua('job.get', 3, 'jid'), {
             'data': '{}',
             'dependencies': {},
             'dependents': {},
@@ -207,7 +214,7 @@ class TestComplete(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 10)
         for jid in jids:
             self.lua('complete', 2, jid, 'worker', 'queue', {})
-        existing = [self.lua('get', 3, jid) for jid in range(10)]
+        existing = [self.lua('job.get', 3, jid) for jid in range(10)]
         self.assertEqual(len([i for i in existing if i]), 5)
 
     def test_expire_complete_time(self):
@@ -219,7 +226,7 @@ class TestComplete(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 10)
         for jid in jids:
             self.lua('complete', 2, jid, 'worker', 'queue', {})
-        existing = [self.lua('get', 3, jid) for jid in range(10)]
+        existing = [self.lua('job.get', 3, jid) for jid in range(10)]
         self.assertEqual([i for i in existing if i], [])
 
     def test_expire_complete_tags_cleared(self):
@@ -246,15 +253,15 @@ class TestCancel(TestQless):
         '''You can cancel waiting jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('cancel', 0, 'jid')
-        self.assertEqual(self.lua('get', 0, 'jid'), None)
+        self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
     def test_cancel_depends(self):
         '''You can cancel dependent job'''
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.lua('cancel', 0, 'b')
-        self.assertEqual(self.lua('get', 0, 'b'), None)
-        self.assertEqual(self.lua('get', 0, 'a')['dependencies'], {})
+        self.assertEqual(self.lua('job.get', 0, 'b'), None)
+        self.assertEqual(self.lua('job.get', 0, 'a')['dependencies'], {})
 
     def test_cancel_dependents(self):
         '''Cannot cancel jobs if they still have dependencies'''
@@ -267,7 +274,7 @@ class TestCancel(TestQless):
         '''You can cancel scheduled jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.lua('cancel', 0, 'jid')
-        self.assertEqual(self.lua('get', 0, 'jid'), None)
+        self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
     def test_cancel_nonexistent(self):
         '''Can cancel jobs that do not exist without failing'''
@@ -279,7 +286,7 @@ class TestCancel(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 2, 'jid')
-        self.assertEqual(self.lua('get', 3, 'jid'), None)
+        self.assertEqual(self.lua('job.get', 3, 'jid'), None)
 
     def test_cancel_running(self):
         '''Can cancel running jobs, prevents heartbeats'''
@@ -294,10 +301,10 @@ class TestCancel(TestQless):
         '''Can cancel job that has been failed from retries through retry'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('get', 2, 'jid')['state'], 'running')
+        self.assertEqual(self.lua('job.get', 2, 'jid')['state'], 'running')
         self.lua('retry', 3, 'jid', 'queue', 'worker')
         self.lua('cancel', 4, 'jid')
-        self.assertEqual(self.lua('get', 5, 'jid'), None)
+        self.assertEqual(self.lua('job.get', 5, 'jid'), None)
 
     def test_cancel_pop_retries(self):
         '''Can cancel job that has been failed from retries through pop'''
@@ -307,7 +314,7 @@ class TestCancel(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('pop', 2, 'queue', 'worker', 10)
         self.lua('cancel', 3, 'jid')
-        self.assertEqual(self.lua('get', 4, 'jid'), None)
+        self.assertEqual(self.lua('job.get', 4, 'jid'), None)
 
 
 class TestThrottles(TestQless):
@@ -331,7 +338,7 @@ class TestThrottles(TestQless):
     self.assertEqual(self.lua('throttle.locks', 4, 'wid'), [b'jid1'])
     self.assertEqual(self.lua('throttle.locks', 5, 'tid'), [])
     self.assertEqual(self.lua('throttle.locks', 6, 'ql:q:queue'), [b'jid1'])
-    self.assertEqual(self.lua('get', 7, 'jid2')['state'], 'throttled')
+    self.assertEqual(self.lua('job.get', 7, 'jid2')['state'], 'throttled')
 
   def test_release_throttles_after_acquisition_on_completion(self):
     '''Can acquire locks for all throttles and then release them when complete'''

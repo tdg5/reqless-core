@@ -323,7 +323,7 @@ class TestPut(TestQless):
         jid = self.lua('put', 12345, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(jid, b'jid')
         # Now we should be able to verify the data we get back
-        self.assertEqual(self.lua('get', 12345, 'jid'), {
+        self.assertEqual(self.lua('job.get', 12345, 'jid'), {
             'data': '{}',
             'dependencies': {},
             'dependents': {},
@@ -349,12 +349,12 @@ class TestPut(TestQless):
         # In particular, an empty array should be acceptable, and /not/
         # transformed into a dictionary when it returns
         self.lua('put', 12345, 'worker', 'queue', 'jid', 'klass', [], 0)
-        self.assertEqual(self.lua('get', 12345, 'jid')['data'], '[]')
+        self.assertEqual(self.lua('job.get', 12345, 'jid')['data'], '[]')
 
     def test_put_delay(self):
         '''When we put a job with a delay, it's reflected in its data'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
-        self.assertEqual(self.lua('get', 0, 'jid')['state'], 'scheduled')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'scheduled')
         # After the delay, we should be able to pop
         self.assertEqual(self.lua('pop', 0, 'queue', 'worker', 10), {})
         self.assertEqual(len(self.lua('pop', 2, 'queue', 'worker', 10)), 1)
@@ -362,41 +362,41 @@ class TestPut(TestQless):
     def test_put_retries(self):
         '''Reflects changes to 'retries' '''
         self.lua('put', 12345, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 2)
-        self.assertEqual(self.lua('get', 12345, 'jid')['retries'], 2)
-        self.assertEqual(self.lua('get', 12345, 'jid')['remaining'], 2)
+        self.assertEqual(self.lua('job.get', 12345, 'jid')['retries'], 2)
+        self.assertEqual(self.lua('job.get', 12345, 'jid')['remaining'], 2)
 
     def test_put_tags(self):
         '''When we put a job with tags, it's reflected in its data'''
         self.lua('put', 12345, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
-        self.assertEqual(self.lua('get', 12345, 'jid')['tags'], ['foo'])
+        self.assertEqual(self.lua('job.get', 12345, 'jid')['tags'], ['foo'])
 
     def test_put_priority(self):
         '''When we put a job with priority, it's reflected in its data'''
         self.lua('put', 12345, 'worker', 'queue', 'jid', 'klass', {}, 0, 'priority', 1)
-        self.assertEqual(self.lua('get', 12345, 'jid')['priority'], 1)
+        self.assertEqual(self.lua('job.get', 12345, 'jid')['priority'], 1)
 
     def test_put_depends(self):
         '''Dependencies are reflected in job data'''
         self.lua('put', 12345, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 12345, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
-        self.assertEqual(self.lua('get', 12345, 'a')['dependents'], ['b'])
-        self.assertEqual(self.lua('get', 12345, 'b')['dependencies'], ['a'])
-        self.assertEqual(self.lua('get', 12345, 'b')['state'], 'depends')
+        self.assertEqual(self.lua('job.get', 12345, 'a')['dependents'], ['b'])
+        self.assertEqual(self.lua('job.get', 12345, 'b')['dependencies'], ['a'])
+        self.assertEqual(self.lua('job.get', 12345, 'b')['state'], 'depends')
 
     def test_put_depends_with_delay(self):
         '''When we put a job with a depends and a delay it is reflected in the job data'''
         self.lua('put', 12345, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 12345, 'worker', 'queue', 'b', 'klass', {}, 1, 'depends', ['a'])
-        self.assertEqual(self.lua('get', 12345, 'a')['dependents'], ['b'])
-        self.assertEqual(self.lua('get', 12345, 'b')['dependencies'], ['a'])
-        self.assertEqual(self.lua('get', 12345, 'b')['state'], 'depends')
+        self.assertEqual(self.lua('job.get', 12345, 'a')['dependents'], ['b'])
+        self.assertEqual(self.lua('job.get', 12345, 'b')['dependencies'], ['a'])
+        self.assertEqual(self.lua('job.get', 12345, 'b')['state'], 'depends')
 
     def test_move(self):
         '''Move is described in terms of puts.'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {'foo': 'bar'}, 0)
-        self.assertEqual(self.lua('get', 0, 'jid')['throttles'], ['ql:q:queue'])
+        self.assertEqual(self.lua('job.get', 0, 'jid')['throttles'], ['ql:q:queue'])
         self.lua('put', 0, 'worker', 'other', 'jid', 'klass', {'foo': 'bar'}, 0, 'throttles', ['ql:q:queue'])
-        self.assertEqual(self.lua('get', 1, 'jid'), {
+        self.assertEqual(self.lua('job.get', 1, 'jid'), {
             'data': '{"foo": "bar"}',
             'dependencies': {},
             'dependents': {},
@@ -428,10 +428,10 @@ class TestPut(TestQless):
             # even after moving
             self.lua('put', 0, 'worker', 'queue', key, 'klass', {}, 0, key, value)
             self.lua('put', 0, 'worker', 'other', key, 'klass', {}, 0)
-            self.assertEqual(self.lua('get', 0, key)[key], value)
+            self.assertEqual(self.lua('job.get', 0, key)[key], value)
             # But if we override it, it should be updated
             self.lua('put', 0, 'worker', 'queue', key, 'klass', {}, 0, key, update)
-            self.assertEqual(self.lua('get', 0, key)[key], update)
+            self.assertEqual(self.lua('job.get', 0, key)[key], update)
 
         # Updating dependecies has to be special-cased a little bit. Without
         # overriding dependencies, they should be carried through the move
@@ -439,14 +439,14 @@ class TestPut(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['a'])
         self.lua('put', 0, 'worker', 'other', 'c', 'klass', {}, 0)
-        self.assertEqual(self.lua('get', 0, 'a')['dependents'], ['c'])
-        self.assertEqual(self.lua('get', 0, 'b')['dependents'], {})
-        self.assertEqual(self.lua('get', 0, 'c')['dependencies'], ['a'])
+        self.assertEqual(self.lua('job.get', 0, 'a')['dependents'], ['c'])
+        self.assertEqual(self.lua('job.get', 0, 'b')['dependents'], {})
+        self.assertEqual(self.lua('job.get', 0, 'c')['dependencies'], ['a'])
         # But if we move and update depends, then it should correctly reflect
         self.lua('put', 0, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['b'])
-        self.assertEqual(self.lua('get', 0, 'a')['dependents'], {})
-        self.assertEqual(self.lua('get', 0, 'b')['dependents'], ['c'])
-        self.assertEqual(self.lua('get', 0, 'c')['dependencies'], ['b'])
+        self.assertEqual(self.lua('job.get', 0, 'a')['dependents'], {})
+        self.assertEqual(self.lua('job.get', 0, 'b')['dependents'], ['c'])
+        self.assertEqual(self.lua('job.get', 0, 'c')['dependencies'], ['b'])
 
 
 class TestPeek(TestQless):

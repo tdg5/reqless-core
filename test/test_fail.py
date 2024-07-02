@@ -22,7 +22,7 @@ class TestFail(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
-        self.assertEqual(self.lua('get', 3, 'jid'), {'data': '{}',
+        self.assertEqual(self.lua('job.get', 3, 'jid'), {'data': '{}',
             'dependencies': {},
             'dependents': {},
             'expires': 0,
@@ -165,7 +165,7 @@ class TestUnfailed(TestQless):
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', 0, 'queue', 'worker', 10)
             self.lua('fail', 0, jid, 'worker', 'group', 'message')
-            self.assertEqual(self.lua('get', 0, jid)['state'], 'failed')
+            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
         self.lua('unfail', 0, 'queue', 'group', 100)
         for jid in jids:
-            self.assertEqual(self.lua('get', 0, jid)['state'], 'waiting')
+            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'waiting')

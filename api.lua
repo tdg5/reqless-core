@@ -4,16 +4,6 @@
 -------------------------------------------------------------------------------
 local QlessAPI = {}
 
--- Return json for the job identified by the provided jid. If the job is not
--- present, then `nil` is returned
-function QlessAPI.get(now, jid)
-  local data = Qless.job(jid):data()
-  if not data then
-    return nil
-  end
-  return cjson.encode(data)
-end
-
 -- Return json blob of data or nil for each jid provided
 function QlessAPI.multiget(now, ...)
   local results = {}
@@ -39,6 +29,15 @@ end
 -- Unset a configuration option
 QlessAPI['config.unset'] = function(now, key)
   return Qless.config.unset(key)
+end
+
+-- Return json for the job identified by the provided jid. If the job is not
+-- present, then `nil` is returned
+QlessAPI['job.get'] = function(now, jid)
+  local data = Qless.job(jid):data()
+  if data then
+    return cjson.encode(data)
+  end
 end
 
 -- Get information about a queue or queues
@@ -248,6 +247,16 @@ QlessAPI['throttle.release'] = function(now, tid, ...)
     throttle:release(now, jid)
   end
 end
+
+-------------------------------------------------------------------------------
+-- Deprecated APIs
+-------------------------------------------------------------------------------
+
+-- Deprecated. Use job.get instead.
+function QlessAPI.get(now, jid)
+  return QlessAPI['job.get'](now, jid)
+end
+
 -------------------------------------------------------------------------------
 -- Function lookup
 -------------------------------------------------------------------------------

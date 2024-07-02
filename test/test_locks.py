@@ -153,9 +153,9 @@ class TestRetries(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.assertEqual(self.lua('pop', 0, 'queue', 'worker', 10), {})
-        self.assertEqual(self.lua('get', 0, 'jid')['state'], 'failed')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'failed')
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('get', 0, 'jid')['state'], 'waiting')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'waiting')
 
     def test_reset_complete(self):
         '''Completing a job resets its retries counter'''
@@ -256,7 +256,7 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua(
             'retry', 0, 'jid', 'queue', 'worker', 0, 'group', 'message')
-        self.assertEqual(self.lua('get', 0, 'jid'), {'data': '{}',
+        self.assertEqual(self.lua('job.get', 0, 'jid'), {'data': '{}',
             'dependencies': {},
             'dependents': {},
             'expires': 0,
@@ -288,7 +288,7 @@ class TestRetry(TestQless):
             'retry', 0, 'jid', 'queue', 'worker', 10)
         # Now it should be considered scheduled
         self.assertEqual(self.lua('pop', 0, 'queue', 'worker', 10), {})
-        self.assertEqual(self.lua('get', 0, 'jid')['state'], 'scheduled')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'scheduled')
 
     def test_retry_wrong_queue(self):
         '''Cannot retry a job in the wrong queue'''
@@ -304,7 +304,7 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua(
             'retry', 0, 'jid', 'queue', 'worker', 0)
-        self.assertEqual(self.lua('get', 0, 'jid'), {
+        self.assertEqual(self.lua('job.get', 0, 'jid'), {
             'data': '{}',
             'dependencies': {},
             'dependents': {},
