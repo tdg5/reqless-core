@@ -8,14 +8,14 @@ class TestStats(TestQless):
     def test_malformed(self):
         '''Enumerate all the ways to send malformed requests'''
         self.assertMalformed(self.lua, [
-            ('stats', 0),
-            ('stats', 0, 'queue'),
-            ('stats', 0, 'queue', 'foo')
+            ('queue.stats', 0),
+            ('queue.stats', 0, 'queue'),
+            ('queue.stats', 0, 'queue', 'foo')
         ])
 
     def test_wait(self):
         '''It correctly tracks wait times'''
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['wait']['count'], 0)
         self.assertEqual(stats['run']['count'], 0)
 
@@ -27,7 +27,7 @@ class TestStats(TestQless):
         for jid in jids:
             self.lua('pop', jid, 'queue', 'worker', 1)
 
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['wait']['count'], 20)
         self.assertAlmostEqual(stats['wait']['mean'], 9.5)
         self.assertAlmostEqual(stats['wait']['std'], 5.916079783099)
@@ -45,7 +45,7 @@ class TestStats(TestQless):
         for jid in jids:
             self.lua('job.complete', jid, jid, 'worker', 'queue', {})
 
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['run']['count'], 20)
         self.assertAlmostEqual(stats['run']['mean'], 9.5)
         self.assertAlmostEqual(stats['run']['std'], 5.916079783099)
@@ -60,14 +60,14 @@ class TestStats(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 1)
         self.assertEqual(stats['failures'], 1)
 
         # If we put the job back in a queue, we don't see any failed jobs,
         # but we still see a failure
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 0)
         self.assertEqual(stats['failures'], 1)
 
@@ -77,7 +77,7 @@ class TestStats(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 0, 'jid')
-        stats = self.lua('stats', 0, 'queue', 0)
+        stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 0)
         self.assertEqual(stats['failures'], 1)
 
@@ -86,9 +86,9 @@ class TestStats(TestQless):
         self.lua('config.set', 0, 'heartbeat', '-10')
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['retries'], 0)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['retries'], 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['retries'], 1)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['retries'], 1)
 
     def test_original_day(self):
         '''It updates stats for the original day of stats'''
@@ -97,16 +97,16 @@ class TestStats(TestQless):
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         # Put it somehwere 1.5 days later
         self.lua('put', 129600, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['failed'], 0)
-        self.assertEqual(self.lua('stats', 0, 'queue', 129600)['failed'], 0)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 0)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 129600)['failed'], 0)
 
     def test_failed_retries(self):
         '''It updates stats for jobs failed from retries'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('job.retry', 3, 'jid', 'queue', 'worker')
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['failed'], 1)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['failures'], 1)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 1)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failures'], 1)
 
     def test_failed_pop_retries(self):
         '''Increment the count failed jobs when job fail from retries'''
@@ -116,5 +116,15 @@ class TestStats(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('pop', 2, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['failed'], 1)
-        self.assertEqual(self.lua('stats', 0, 'queue', 0)['failures'], 1)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 1)
+        self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failures'], 1)
+
+    def test_stats_still_works(self):
+        '''Deprecated stats API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
+        self.lua('cancel', 0, 'jid')
+        stats = self.lua('stats', 0, 'queue', 0)
+        self.assertEqual(stats['failed'], 0)
+        self.assertEqual(stats['failures'], 1)

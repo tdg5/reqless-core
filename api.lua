@@ -78,6 +78,10 @@ QlessAPI["queue.jobsByState"] = function(now, state, ...)
   return Qless.jobs(now, state, unpack(arg))
 end
 
+QlessAPI['queue.stats'] = function(now, queue, date)
+  return cjson.encode(Qless.queue(queue):stats(now, date))
+end
+
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
@@ -96,10 +100,6 @@ end
 
 QlessAPI.tag = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI.stats = function(now, queue, date)
-  return cjson.encode(Qless.queue(queue):stats(now, date))
 end
 
 -- Add logging to a particular jid
@@ -320,6 +320,11 @@ end
 -- Deprecated. Use job.retry instead.
 QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
   return QlessAPI['job.retry'](now, jid, queue, worker, delay, group, message)
+end
+
+-- Deprecated. Use queue.stats instead.
+QlessAPI.stats = function(now, queue, date)
+  return QlessAPI['queue.stats'](now, queue, date)
 end
 
 -- Deprecated. Use worker.counts or workers.list instead
