@@ -104,7 +104,7 @@ class TestStats(TestQless):
         '''It updates stats for jobs failed from retries'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('retry', 3, 'jid', 'queue', 'worker')
+        self.lua('job.retry', 3, 'jid', 'queue', 'worker')
         self.assertEqual(self.lua('stats', 0, 'queue', 0)['failed'], 1)
         self.assertEqual(self.lua('stats', 0, 'queue', 0)['failures'], 1)
 

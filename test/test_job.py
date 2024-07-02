@@ -326,7 +326,7 @@ class TestCancel(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.assertEqual(self.lua('job.get', 2, 'jid')['state'], 'running')
-        self.lua('retry', 3, 'jid', 'queue', 'worker')
+        self.lua('job.retry', 3, 'jid', 'queue', 'worker')
         self.lua('cancel', 4, 'jid')
         self.assertEqual(self.lua('job.get', 5, 'jid'), None)
 
@@ -385,7 +385,7 @@ class TestThrottles(TestQless):
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [b'jid'])
-    self.lua('retry', 0, 'jid', 'queue', 'worker', 0, 'retry', 'retrying')
+    self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0, 'retry', 'retrying')
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [])

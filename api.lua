@@ -50,6 +50,10 @@ QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
+QlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
+  return Qless.job(jid):retry(now, queue, worker, delay, group, message)
+end
+
 QlessAPI["jobs.completed"] = function(now, offset, limit)
   return Qless.jobs(now, 'complete', offset, limit)
 end
@@ -68,10 +72,6 @@ end
 
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
-end
-
-QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
-  return Qless.job(jid):retry(now, queue, worker, delay, group, message)
 end
 
 QlessAPI.depends = function(now, jid, command, ...)
@@ -301,6 +301,11 @@ QlessAPI.queues = function(now, queue)
     return QlessAPI['queue.counts'](now, queue)
   end
   return QlessAPI['queues.list'](now)
+end
+
+-- Deprecated. Use job.retry instead.
+QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
+  return QlessAPI['job.retry'](now, jid, queue, worker, delay, group, message)
 end
 
 -------------------------------------------------------------------------------

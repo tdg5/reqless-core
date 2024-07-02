@@ -184,19 +184,18 @@ class TestRetry(TestQless):
     def test_malformed(self):
         '''Enumerate all the malformed inputs'''
         self.assertMalformed(self.lua, [
-            ('retry', 0),
-            ('retry', 0, 'jid'),
-            ('retry', 0, 'jid', 'queue'),
-            ('retry', 0, 'jid', 'queue', 'worker'),
-            ('retry', 0, 'jid', 'queue', 'worker', 'foo'),
+            ('job.retry', 0),
+            ('job.retry', 0, 'jid'),
+            ('job.retry', 0, 'jid', 'queue'),
+            ('job.retry', 0, 'jid', 'queue', 'worker'),
+            ('job.retry', 0, 'jid', 'queue', 'worker', 'foo'),
         ])
-        # function QlessJob:retry(now, queue, worker, delay, group, message)
 
     def test_retry_waiting(self):
         '''Cannot retry a job that's waiting'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
-            self.lua, 'retry', 0, 'jid', 'queue', 'worker', 0)
+            self.lua, 'job.retry', 0, 'jid', 'queue', 'worker', 0)
 
     def test_retry_completed(self):
         '''Cannot retry a completed job'''
@@ -204,7 +203,7 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
-            self.lua, 'retry', 0, 'jid', 'queue', 'worker', 0)
+            self.lua, 'job.retry', 0, 'jid', 'queue', 'worker', 0)
 
     def test_retry_failed(self):
         '''Cannot retry a failed job'''
@@ -212,20 +211,20 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
-            self.lua, 'retry', 0, 'jid', 'queue', 'worker', 0)
+            self.lua, 'job.retry', 0, 'jid', 'queue', 'worker', 0)
 
     def test_retry_otherowner(self):
         '''Cannot retry a job owned by another worker'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.assertRaisesRegexp(redis.ResponseError, r'another worker',
-            self.lua, 'retry', 0, 'jid', 'queue', 'another', 0)
+            self.lua, 'job.retry', 0, 'jid', 'queue', 'another', 0)
 
     def test_retry_complete(self):
         '''Cannot complete a job immediately after retry'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
             self.lua, 'job.complete', 0, 'jid', 'worker', 'queue', {})
 
@@ -233,7 +232,7 @@ class TestRetry(TestQless):
         '''Cannot fail a job immediately after retry'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
             self.lua, 'job.fail', 0, 'jid', 'worker', 'group', 'message', {})
 
@@ -241,21 +240,21 @@ class TestRetry(TestQless):
         '''Cannot heartbeat a job immediately after retry'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
             self.lua, 'job.heartbeat', 0, 'jid', 'worker', {})
 
     def test_retry_nonexistent(self):
         '''It's an error to retry a nonexistent job'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'retry', 0, 'jid', 'queue', 'another', 0)
+            self.lua, 'job.retry', 0, 'jid', 'queue', 'another', 0)
 
     def test_retry_group_message(self):
         '''Can provide a group/message to be used for retries'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua(
-            'retry', 0, 'jid', 'queue', 'worker', 0, 'group', 'message')
+            'job.retry', 0, 'jid', 'queue', 'worker', 0, 'group', 'message')
         self.assertEqual(self.lua('job.get', 0, 'jid'), {'data': '{}',
             'dependencies': {},
             'dependents': {},
@@ -284,8 +283,7 @@ class TestRetry(TestQless):
         '''Can retry a job with a delay and then it's considered scheduled'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua(
-            'retry', 0, 'jid', 'queue', 'worker', 10)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 10)
         # Now it should be considered scheduled
         self.assertEqual(self.lua('pop', 0, 'queue', 'worker', 10), {})
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'scheduled')
@@ -294,7 +292,7 @@ class TestRetry(TestQless):
         '''Cannot retry a job in the wrong queue'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
             self.lua, 'job.heartbeat', 0, 'jid', 'worker', {})
 
@@ -302,8 +300,7 @@ class TestRetry(TestQless):
         '''Retry can be invoked enough to cause it to fail retries'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua(
-            'retry', 0, 'jid', 'queue', 'worker', 0)
+        self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertEqual(self.lua('job.get', 0, 'jid'), {
             'data': '{}',
             'dependencies': {},
@@ -331,6 +328,36 @@ class TestRetry(TestQless):
             'worker': u'',
             'spawned_from_jid': False
         })
+
+    def test_retry_still_works(self):
+        '''Deprecated retry API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
+        self.lua('pop', 0, 'queue', 'worker', 10)
+        self.lua(
+            'retry', 0, 'jid', 'queue', 'worker', 0, 'group', 'message')
+        self.assertEqual(self.lua('job.get', 0, 'jid'), {'data': '{}',
+            'dependencies': {},
+            'dependents': {},
+            'expires': 0,
+            'failure': {'group': 'group',
+                        'message': 'message',
+                        'when': 0,
+                        'worker': 'worker'},
+            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
+                        {'what': 'popped', 'when': 0, 'worker': 'worker'},
+                        {'group': 'group', 'what': 'failed-retries', 'when': 0}],
+            'jid': 'jid',
+            'klass': 'klass',
+            'priority': 0,
+            'queue': 'queue',
+            'remaining': -1,
+            'retries': 0,
+            'state': 'failed',
+            'tags': {},
+            'tracked': False,
+            'throttles': ['ql:q:queue'],
+            'worker': u'',
+            'spawned_from_jid': False})
 
 
 class TestGracePeriod(TestQless):
