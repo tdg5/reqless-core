@@ -82,8 +82,12 @@ QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
 
-QlessAPI.workers = function(now, worker)
+QlessAPI['worker.counts'] = function(now, worker)
   return cjson.encode(QlessWorker.counts(now, worker))
+end
+
+QlessAPI['workers.list'] = function(now)
+  return cjson.encode(QlessWorker.counts(now, nil))
 end
 
 QlessAPI.track = function(now, command, jid)
@@ -316,6 +320,14 @@ end
 -- Deprecated. Use job.retry instead.
 QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
   return QlessAPI['job.retry'](now, jid, queue, worker, delay, group, message)
+end
+
+-- Deprecated. Use worker.counts or workers.list instead
+QlessAPI.workers = function(now, worker)
+  if worker then
+    return QlessAPI['worker.counts'](now, worker)
+  end
+  return QlessAPI['workers.list'](now)
 end
 
 -------------------------------------------------------------------------------
