@@ -9,16 +9,48 @@ class TestFail(TestQless):
     def test_malformed(self):
         '''Enumerate all the malformed cases'''
         self.assertMalformed(self.lua, [
-            ('fail', 0),
-            ('fail', 0, 'jid'),
-            ('fail', 0, 'jid', 'worker'),
-            ('fail', 0, 'jid', 'worker', 'group'),
-            ('fail', 0, 'jid', 'worker', 'group', 'message'),
-            ('fail', 0, 'jid', 'worker', 'group', 'message', '[}')
+            ('job.fail', 0),
+            ('job.fail', 0, 'jid'),
+            ('job.fail', 0, 'jid', 'worker'),
+            ('job.fail', 0, 'jid', 'worker', 'group'),
+            ('job.fail', 0, 'jid', 'worker', 'group', 'message'),
+            ('job.fail', 0, 'jid', 'worker', 'group', 'message', '[}')
         ])
 
     def test_basic(self):
         '''Fail a job in a very basic way'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 1, 'queue', 'worker', 10)
+        self.lua('job.fail', 2, 'jid', 'worker', 'group', 'message', {})
+        self.assertEqual(self.lua('job.get', 3, 'jid'), {'data': '{}',
+            'dependencies': {},
+            'dependents': {},
+            'expires': 0,
+            'failure': {'group': 'group',
+                        'message': 'message',
+                        'when': 2,
+                        'worker': 'worker'},
+            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
+                        {'what': 'popped', 'when': 1, 'worker': 'worker'},
+                        {'group': 'group',
+                         'what': 'failed',
+                         'when': 2,
+                         'worker': 'worker'}],
+            'jid': 'jid',
+            'klass': 'klass',
+            'priority': 0,
+            'queue': 'queue',
+            'remaining': 5,
+            'retries': 5,
+            'state': 'failed',
+            'tags': {},
+            'tracked': False,
+            'throttles': ['ql:q:queue'],
+            'worker': u'',
+            'spawned_from_jid': False})
+
+    def test_fail_still_works(self):
+        '''Deprecated fail API still works'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
@@ -53,7 +85,7 @@ class TestFail(TestQless):
         '''Can put a job that has been failed'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 2, 'jid', 'worker', 'group', 'message', {})
         self.lua('put', 3, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(len(self.lua('peek', 4, 'queue', 0, 10)), 1)
 
@@ -61,31 +93,31 @@ class TestFail(TestQless):
         '''Only popped jobs can be failed'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertRaisesRegexp(redis.ResponseError, r'waiting',
-            self.lua, 'fail', 1, 'jid', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         # Pop is and it should work
         self.lua('pop', 2, 'queue', 'worker', 10)
-        self.lua('fail', 3, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 3, 'jid', 'worker', 'group', 'message', {})
 
     def test_fail_depends(self):
         '''Cannot fail a dependent job'''
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertRaisesRegexp(redis.ResponseError, r'depends',
-            self.lua, 'fail', 1, 'b', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 1, 'b', 'worker', 'group', 'message', {})
 
     def test_fail_scheduled(self):
         '''Cannot fail a scheduled job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.assertRaisesRegexp(redis.ResponseError, r'scheduled',
-            self.lua, 'fail', 1, 'jid', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 1, 'jid', 'worker', 'group', 'message', {})
 
     def test_fail_nonexistent(self):
         '''Cannot fail a job that doesn't exist'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'fail', 1, 'jid', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
 
     def test_fail_completed(self):
         '''Cannot fail a job that has been completed'''
@@ -93,7 +125,7 @@ class TestFail(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertRaisesRegexp(redis.ResponseError, r'complete',
-            self.lua, 'fail', 1, 'jid', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 1, 'jid', 'worker', 'group', 'message', {})
 
     def test_fail_owner(self):
         '''Cannot fail a job that's running with another worker'''
@@ -102,7 +134,7 @@ class TestFail(TestQless):
         self.lua('put', 2, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 3, 'queue', 'another-worker', 10)
         self.assertRaisesRegexp(redis.ResponseError, r'another worker',
-            self.lua, 'fail', 4, 'jid', 'worker', 'group', 'message', {})
+            self.lua, 'job.fail', 4, 'jid', 'worker', 'group', 'message', {})
 
 
 class TestFailed(TestQless):
@@ -118,7 +150,7 @@ class TestFailed(TestQless):
         '''We can keep track of failed jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 0, 'jid', 'worker', 'group', 'message')
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message')
         self.assertEqual(self.lua('failed', 0), {
             'group': 1
         })
@@ -147,7 +179,7 @@ class TestFailed(TestQless):
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
-            self.lua('fail', jid, jid, 'worker', 'group', 'message')
+            self.lua('job.fail', jid, jid, 'worker', 'group', 'message')
         # Get two pages of 50 and make sure they're what we expect
         jids = list(reversed(jids))
         self.assertEqual(
@@ -164,7 +196,7 @@ class TestUnfailed(TestQless):
         for jid in jids:
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', 0, 'queue', 'worker', 10)
-            self.lua('fail', 0, jid, 'worker', 'group', 'message')
+            self.lua('job.fail', 0, jid, 'worker', 'group', 'message')
             self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
         self.lua('unfail', 0, 'queue', 'group', 100)
         for jid in jids:

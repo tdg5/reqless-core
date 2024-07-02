@@ -714,7 +714,7 @@ class TestPop(TestQless):
         self.lua('pop', 2, 'queue', 'worker', 10)
         self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'a'])
         self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), [b'b'])
-        self.lua('fail', 5, 'a', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 5, 'a', 'worker', 'group', 'message', {})
         job = self.lua('pop', 6, 'queue', 'worker', 10)[0]
         self.assertEqual(job['jid'], 'b')
 

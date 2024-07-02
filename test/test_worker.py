@@ -85,7 +85,7 @@ class TestWorker(TestQless):
             'jobs': ['jid'],
             'stalled': {}
         })
-        self.lua('fail', 3, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 3, 'jid', 'worker', 'group', 'message', {})
         self.assertEqual(self.lua('workers', 4, 'worker'), {
             'jobs': {},
             'stalled': {}

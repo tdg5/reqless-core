@@ -188,7 +188,7 @@ class TestRelease(TestQless):
     self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
     self.lua('pop', 0, 'queue', 'worker', 1)
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid'])
-    self.lua('fail', 0, 'jid', 'worker', 'failed', 'i failed', {})
+    self.lua('job.fail', 0, 'jid', 'worker', 'failed', 'i failed', {})
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('jobs', 0, 'throttled', 'queue'), [])
 
@@ -291,7 +291,7 @@ class TestDependents(TestQless):
     self.lua('pop', 0, 'queue', 'worker', 1)
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid1'])
     self.assertEqual(self.lua('jobs', 0, 'throttled', 'queue'), [])
-    self.lua('fail', 0, 'jid1', 'worker', 'failed', 'i failed', {})
+    self.lua('job.fail', 0, 'jid1', 'worker', 'failed', 'i failed', {})
 
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('jobs', 0, 'throttled', 'queue'), [])

@@ -59,7 +59,7 @@ class TestStats(TestQless):
         # number of times a job has failed in that queue
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
-        self.lua('fail', 0, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         stats = self.lua('stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 1)
         self.assertEqual(stats['failures'], 1)
@@ -75,7 +75,7 @@ class TestStats(TestQless):
         '''If we fail a job, and then cancel it, stats reflects 0 failed job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
-        self.lua('fail', 0, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 0, 'jid')
         stats = self.lua('stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 0)
@@ -94,7 +94,7 @@ class TestStats(TestQless):
         '''It updates stats for the original day of stats'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 1)
-        self.lua('fail', 0, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         # Put it somehwere 1.5 days later
         self.lua('put', 129600, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('stats', 0, 'queue', 0)['failed'], 0)

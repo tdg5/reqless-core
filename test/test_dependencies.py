@@ -215,7 +215,7 @@ class TestDependencies(TestQless):
         '''Cannot add or remove dependencies if the job is failed'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
             self.lua, 'depends', 0, 'jid', 'on', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',

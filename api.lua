@@ -26,6 +26,10 @@ QlessAPI['job.complete'] = function(now, jid, worker, queue, data, ...)
   return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
+QlessAPI['job.fail'] = function(now, jid, worker, group, message, data)
+  return Qless.job(jid):fail(now, worker, group, message, data)
+end
+
 -- Return json for the job identified by the provided jid. If the job is not
 -- present, then `nil` is returned
 QlessAPI['job.get'] = function(now, jid)
@@ -58,10 +62,6 @@ end
 
 QlessAPI.failed = function(now, group, start, limit)
   return cjson.encode(Qless.failed(group, start, limit))
-end
-
-QlessAPI.fail = function(now, jid, worker, group, message, data)
-  return Qless.job(jid):fail(now, worker, group, message, data)
 end
 
 QlessAPI.jobs = function(now, state, ...)
@@ -258,6 +258,11 @@ end
 -- Deprecated. Use job.complete instead.
 QlessAPI.complete = function(now, jid, worker, queue, data, ...)
   return QlessAPI['job.complete'](now, jid, worker, queue, data, unpack(arg))
+end
+
+-- Deprecated. Use job.fail instead.
+QlessAPI.fail = function(now, jid, worker, group, message, data)
+  return QlessAPI['job.fail'](now, jid, worker, group, message, data)
 end
 
 -- Deprecated. Use job.get instead.

@@ -58,7 +58,7 @@ class TestEvents(TestQless):
         self.lua('track', 0, 'track', 'jid')
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
-            self.lua('fail', 0, 'jid', 'worker', 'grp', 'mess', {})
+            self.lua('job.fail', 0, 'jid', 'worker', 'grp', 'mess', {})
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -257,7 +257,7 @@ class TestEvents(TestQless):
         '''We should hear chatter about canceling failed jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 0, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         with self.lua:
             self.lua('cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{

@@ -138,7 +138,7 @@ class TestComplete(TestQless):
         '''Cannot complete a failed job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.assertRaisesRegexp(redis.ResponseError, r'failed',
             self.lua, 'job.complete', 0, 'jid', 'worker', 'queue', {})
 
@@ -146,7 +146,7 @@ class TestComplete(TestQless):
         '''Erases failure data after completing'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 2, 'jid', 'worker', 'group', 'message', {})
         self.lua('put', 3, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 4, 'queue', 'worker', 10)
         self.assertEqual(self.lua('job.get', 5, 'jid')['failure'], {
@@ -308,7 +308,7 @@ class TestCancel(TestQless):
         '''Can cancel failed jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
+        self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 2, 'jid')
         self.assertEqual(self.lua('job.get', 3, 'jid'), None)
 
@@ -398,7 +398,7 @@ class TestThrottles(TestQless):
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [b'jid'])
-    self.lua('fail', 0, 'jid', 'worker', 'queue', {})
+    self.lua('job.fail', 0, 'jid', 'worker', 'queue', {})
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [])
