@@ -83,47 +83,47 @@ class TestComplete(TestQless):
     def test_malformed(self):
         '''Enumerate all the way they can be malformed'''
         self.assertMalformed(self.lua, [
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'next'),
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'delay'),
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'delay', 'foo'),
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'depends'),
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'depends', '[}'),
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'next'),
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'delay'),
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'delay', 'foo'),
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends'),
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends', '[}'),
             # Can't have 'depends' with a delay
-            ('complete', 0, 'jid', 'worker', 'queue', {},
+            ('job.complete', 0, 'jid', 'worker', 'queue', {},
                 'depends', ['foo'], 'delay', 5),
             # Can't have 'depends' without 'next'
-            ('complete', 0, 'jid', 'worker', 'queue', {}, 'depends', ['foo'])
+            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends', ['foo'])
         ])
 
     def test_complete_waiting(self):
         '''Only popped jobs can be completed'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertRaisesRegexp(redis.ResponseError, r'waiting',
-            self.lua, 'complete', 1, 'jid', 'worker', 'queue', {})
+            self.lua, 'job.complete', 1, 'jid', 'worker', 'queue', {})
         # Pop it and it should work
         self.lua('pop', 2, 'queue', 'worker', 10)
-        self.lua('complete', 1, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 1, 'jid', 'worker', 'queue', {})
 
     def test_complete_depends(self):
         '''Cannot complete a dependent job'''
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertRaisesRegexp(redis.ResponseError, r'depends',
-            self.lua, 'complete', 1, 'b', 'worker', 'queue', {})
+            self.lua, 'job.complete', 1, 'b', 'worker', 'queue', {})
 
     def test_complete_scheduled(self):
         '''Cannot complete a scheduled job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.assertRaisesRegexp(redis.ResponseError, r'scheduled',
-            self.lua, 'complete', 1, 'jid', 'worker', 'queue', {})
+            self.lua, 'job.complete', 1, 'jid', 'worker', 'queue', {})
 
     def test_complete_nonexistent(self):
         '''Cannot complete a job that doesn't exist'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'complete', 1, 'jid', 'worker', 'queue', {})
+            self.lua, 'job.complete', 1, 'jid', 'worker', 'queue', {})
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 1, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 1, 'jid', 'worker', 'queue', {})
 
     def test_complete_failed(self):
         '''Cannot complete a failed job'''
@@ -131,7 +131,7 @@ class TestComplete(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.assertRaisesRegexp(redis.ResponseError, r'failed',
-            self.lua, 'complete', 0, 'jid', 'worker', 'queue', {})
+            self.lua, 'job.complete', 0, 'jid', 'worker', 'queue', {})
 
     def test_complete_previously_failed(self):
         '''Erases failure data after completing'''
@@ -145,7 +145,7 @@ class TestComplete(TestQless):
             'message': 'message',
             'when': 2,
             'worker': 'worker'})
-        self.lua('complete', 6, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 6, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('job.get', 7, 'jid')['failure'], {})
 
     def test_get_still_works(self):
@@ -159,7 +159,7 @@ class TestComplete(TestQless):
         '''Basic completion'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('complete', 2, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 2, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('job.get', 3, 'jid'), {
             'data': '{}',
             'dependencies': {},
@@ -186,7 +186,7 @@ class TestComplete(TestQless):
         '''Can complete and advance a job in one fell swooop'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('complete', 2, 'jid', 'worker', 'queue', {}, 'next', 'foo')
+        self.lua('job.complete', 2, 'jid', 'worker', 'queue', {}, 'next', 'foo')
         self.assertEqual(
             self.lua('pop', 3, 'foo', 'worker', 10)[0]['jid'], 'jid')
 
@@ -194,7 +194,7 @@ class TestComplete(TestQless):
         '''Does not mangle empty arrays in job data when advancing'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', '[]', 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('complete', 2, 'jid', 'worker', 'queue', '[]', 'next', 'foo')
+        self.lua('job.complete', 2, 'jid', 'worker', 'queue', '[]', 'next', 'foo')
         self.assertEqual(
             self.lua('pop', 3, 'foo', 'worker', 10)[0]['data'], '[]')
 
@@ -203,14 +203,14 @@ class TestComplete(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.assertRaisesRegexp(redis.ResponseError, r'another worker',
-            self.lua, 'complete', 2, 'jid', 'another', 'queue', {})
+            self.lua, 'job.complete', 2, 'jid', 'another', 'queue', {})
 
     def test_wrong_queue(self):
         '''A job can only be completed in the queue it's in'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.assertRaisesRegexp(redis.ResponseError, r'another queue',
-            self.lua, 'complete', 2, 'jid', 'worker', 'another-queue', {})
+            self.lua, 'job.complete', 2, 'jid', 'worker', 'another-queue', {})
 
     def test_expire_complete_count(self):
         '''Jobs expire after a k complete jobs'''
@@ -220,7 +220,7 @@ class TestComplete(TestQless):
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         for jid in jids:
-            self.lua('complete', 2, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 2, jid, 'worker', 'queue', {})
         existing = [self.lua('job.get', 3, jid) for jid in range(10)]
         self.assertEqual(len([i for i in existing if i]), 5)
 
@@ -232,7 +232,7 @@ class TestComplete(TestQless):
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
         for jid in jids:
-            self.lua('complete', 2, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 2, jid, 'worker', 'queue', {})
         existing = [self.lua('job.get', 3, jid) for jid in range(10)]
         self.assertEqual([i for i in existing if i], [])
 
@@ -250,9 +250,17 @@ class TestComplete(TestQless):
         self.lua('put', 6, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['abc'])
         self.assertEqual(self.lua('tag', 7, 'get', 'abc', 0, 0)['jobs'], ['jid'])
         self.lua('pop', 8, 'queue', 'worker', 1)
-        self.lua('complete', 9, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 9, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('tag', 10, 'get', 'abc', 0, 0)['jobs'], {})
         self.assertEqual(self.redis.zrange('ql:tags', 0, -1), [])
+
+    def test_complete_still_works(self):
+        '''Deprecated complete API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 1, 'queue', 'worker', 1)
+        self.lua('complete', 2, 'jid', 'worker', 'queue', {})
+        # Ensure that it shows up everywhere it should
+        self.assertEqual(self.lua('job.get', 3, 'jid')['state'], 'complete')
 
 class TestCancel(TestQless):
     '''Canceling jobs'''
@@ -355,7 +363,7 @@ class TestThrottles(TestQless):
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [b'jid'])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [b'jid'])
-    self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+    self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'wid'), [])
     self.assertEqual(self.lua('throttle.locks', 0, 'ql:q:queue'), [])

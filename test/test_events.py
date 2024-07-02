@@ -43,7 +43,7 @@ class TestEvents(TestQless):
         self.lua('track', 0, 'track', 'jid')
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
-            self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+            self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:completed',
             'data': b'jid'
@@ -137,7 +137,7 @@ class TestEvents(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
             self.lua(
-                'complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'queue')
+                'job.complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'queue')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':

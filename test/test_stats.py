@@ -43,7 +43,7 @@ class TestStats(TestQless):
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', 0, 'queue', 'worker', 1)
         for jid in jids:
-            self.lua('complete', jid, jid, 'worker', 'queue', {})
+            self.lua('job.complete', jid, jid, 'worker', 'queue', {})
 
         stats = self.lua('stats', 0, 'queue', 0)
         self.assertEqual(stats['run']['count'], 20)

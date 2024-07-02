@@ -12,7 +12,7 @@ class TestDependencies(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         # Only 'a' should show up
         self.assertEqual(len(self.lua('pop', 1, 'queue', 'worker', 10)), 1)
-        self.lua('complete', 2, 'a', 'worker', 'queue', {})
+        self.lua('job.complete', 2, 'a', 'worker', 'queue', {})
         # And now 'b' should be available
         self.assertEqual(
             self.lua('pop', 3, 'queue', 'worker', 10)[0]['jid'], 'b')
@@ -23,7 +23,7 @@ class TestDependencies(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 1000, 'depends', ['a'])
         # Only 'a' should show up
         self.assertEqual(len(self.lua('pop', 1, 'queue', 'worker', 10)), 1)
-        self.lua('complete', 2, 'a', 'worker', 'queue', {})
+        self.lua('job.complete', 2, 'a', 'worker', 'queue', {})
         # And now 'b' should be scheduled
         self.assertEqual(self.lua('job.get', 3, 'b')['state'], 'scheduled')
         # After we wait for the delay, it should be available
@@ -40,13 +40,13 @@ class TestDependencies(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.assertEqual(len(self.lua('pop', 2, 'queue', 'worker', 1)), 1)
-        self.lua('complete', 3, 'a', 'worker', 'queue', {}, 'next', 'foo',
+        self.lua('job.complete', 3, 'a', 'worker', 'queue', {}, 'next', 'foo',
             'depends', ['b'], 'delay', 10)
         # Now its state should be 'depends'
         self.assertEqual(self.lua('job.get', 4, 'a')['state'], 'depends')
         # Now pop and complete the job it depends on
         self.lua('pop', 5, 'queue', 'worker', 1)
-        self.lua('complete', 6, 'b', 'worker', 'queue', {})
+        self.lua('job.complete', 6, 'b', 'worker', 'queue', {})
         # Now it should be scheduled
         self.assertEqual(self.lua('job.get', 7, 'a')['state'], 'scheduled')
         self.assertEqual(len(self.lua('peek', 13, 'foo', 0, 10)), 1)
@@ -58,7 +58,7 @@ class TestDependencies(TestQless):
         self.lua('put', 1, 'worker', 'queue', 'a', 'klass', {}, 0)
         # Pop 'b', and then complete it it and make it depend on 'a'
         self.lua('pop', 2, 'queue', 'worker', 1)
-        self.lua('complete', 3, 'b', 'worker', 'queue', {},
+        self.lua('job.complete', 3, 'b', 'worker', 'queue', {},
             'depends', ['a'], 'next', 'queue')
         # Ensure that it shows up everywhere it should
         self.assertEqual(self.lua('job.get', 4, 'b')['state'], 'depends')
@@ -72,7 +72,7 @@ class TestDependencies(TestQless):
         # First, let's try with a job that has been explicitly completed
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 1)
-        self.lua('complete', 2, 'a', 'worker', 'queue', {})
+        self.lua('job.complete', 2, 'a', 'worker', 'queue', {})
         self.assertEqual(self.lua('job.get', 3, 'a')['state'], 'complete')
         # Now this job should be readily available
         self.lua('put', 4, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
@@ -128,7 +128,7 @@ class TestDependencies(TestQless):
         for jid in jids:
             self.assertEqual(self.lua('job.get', 30, 'jid')['state'], 'depends')
             self.lua('pop', 30, 'queue', 'worker', 1)
-            self.lua('complete', 30, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 30, jid, 'worker', 'queue', {})
 
         # With all of these dependencies finally satisfied, it's available
         self.assertEqual(self.lua('job.get', 40, 'jid')['state'], 'waiting')
@@ -146,7 +146,7 @@ class TestDependencies(TestQless):
             popped = self.lua('pop', 100, 'queue', 'worker', 10)
             self.assertEqual(len(popped), 1)
             self.assertEqual(popped[0]['jid'], jid)
-            self.lua('complete', 100, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 100, jid, 'worker', 'queue', {})
 
     def test_add_dependency(self):
         '''We can add dependencies if it's already in the 'depends' state'''
@@ -181,10 +181,10 @@ class TestDependencies(TestQless):
         self.assertEqual(self.lua('job.get', 6, 'b')['dependents'], ['c'])
         # Also, let's make sure that its effective dependencies are changed
         self.lua('pop', 7, 'queue', 'worker', 10)
-        self.lua('complete', 8, 'a', 'worker', 'queue', {})
+        self.lua('job.complete', 8, 'a', 'worker', 'queue', {})
         # We should not see the job unlocked
         self.assertEqual(self.lua('pop', 9, 'queue', 'worker', 10), {})
-        self.lua('complete', 10, 'b', 'worker', 'queue', {})
+        self.lua('job.complete', 10, 'b', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('pop', 9, 'queue', 'worker', 10)[0]['jid'], 'c')
 

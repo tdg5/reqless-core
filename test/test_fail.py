@@ -91,7 +91,7 @@ class TestFail(TestQless):
         '''Cannot fail a job that has been completed'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertRaisesRegexp(redis.ResponseError, r'complete',
             self.lua, 'fail', 1, 'jid', 'worker', 'group', 'message', {})
 

@@ -33,7 +33,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
-            self.lua('complete', jid, jid, 'worker', 'queue', {})
+            self.lua('job.complete', jid, jid, 'worker', 'queue', {})
             complete = self.lua('jobs', jid, 'complete')
             self.assertEqual(len(complete), int(jid) + 1)
             self.assertEqual(int(complete[0]), int(jid))
@@ -110,7 +110,7 @@ class TestJobs(TestQless):
         for jid in jids:
             self.lua('put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
             self.lua('pop', jid, 'queue', 'worker', 10)
-            self.lua('complete', jid, jid, 'worker', 'queue', {})
+            self.lua('job.complete', jid, jid, 'worker', 'queue', {})
         # Get two pages and ensure they're what we expect
         jids = list(reversed(jids))
         self.assertEqual(
@@ -250,7 +250,7 @@ class TestQueue(TestQless):
         '''When advancing a job to a new queue, queues should know about it'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'another')
+        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'another')
         expected = dict(self.expected)
         expected['name'] = 'another'
         expected['waiting'] = 1
@@ -677,7 +677,7 @@ class TestPop(TestQless):
         self.assertEqual(len(self.lua('pop', 10, 'queue', 'worker', 10)), 5)
         # But as we complete the jobs, we can pop more
         for jid in range(5):
-            self.lua('complete', 10, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 10, jid, 'worker', 'queue', {})
             self.assertEqual(len(self.lua('pop', 10, 'queue', 'worker', 10)), 1)
 
     def test_reduce_max_concurrency(self):
@@ -691,7 +691,7 @@ class TestPop(TestQless):
         for jid in range(6):
             self.assertEqual(
                 len(self.lua('pop', 100, 'queue', 'worker', 10)), 0)
-            self.lua('complete', 100, jid, 'worker', 'queue', {})
+            self.lua('job.complete', 100, jid, 'worker', 'queue', {})
         # And now we should be able to start popping jobs
         self.assertEqual(
             len(self.lua('pop', 100, 'queue', 'worker', 10)), 1)
@@ -737,7 +737,7 @@ class TestPop(TestQless):
         self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), [b'jid2'])
         self.assertEqual(self.lua('jobs', 5, 'throttled', 'queue'), [b'jid2'])
         self.assertEqual(self.lua('jobs', 5, 'running', 'queue'), [b'jid1'])
-        self.lua('complete', 7, 'jid1', 'worker', 'queue', {})
+        self.lua('job.complete', 7, 'jid1', 'worker', 'queue', {})
         self.assertEqual(self.lua('jobs', 8, 'throttled', 'queue'), [])
         self.lua('pop', 10, 'queue', 'worker', 1)
         self.assertEqual(self.lua('throttle.locks',11, 'ql:q:queue'), [b'jid2'])

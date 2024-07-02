@@ -104,13 +104,13 @@ class TestTag(TestQless):
         self.lua('config.set', 0, 'jobs-history', 100)
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('tag', 99, 'get', 'foo', 0, 10)['jobs'], ['jid'])
         # We now need another job to complete to expire this job
         self.lua('put', 101, 'worker', 'queue', 'foo', 'klass', {}, 0)
         self.lua('pop', 101, 'queue', 'worker', 10)
-        self.lua('complete', 101, 'foo', 'worker', 'queue', {})
+        self.lua('job.complete', 101, 'foo', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('tag', 101, 'get', 'foo', 0, 10)['jobs'], {})
 
@@ -119,13 +119,13 @@ class TestTag(TestQless):
         self.lua('config.set', 0, 'jobs-history-count', 1)
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('tag', 0, 'get', 'foo', 0, 10)['jobs'], ['jid'])
         # We now need another job to complete to expire this job
         self.lua('put', 1, 'worker', 'queue', 'foo', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('complete', 1, 'foo', 'worker', 'queue', {})
+        self.lua('job.complete', 1, 'foo', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('tag', 1, 'get', 'foo', 0, 10)['jobs'], {})
 

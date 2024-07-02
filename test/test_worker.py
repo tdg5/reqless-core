@@ -104,7 +104,7 @@ class TestWorker(TestQless):
             'jobs': ['jid'],
             'stalled': {}
         })
-        self.lua('complete', 3, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 3, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('workers', 4, 'worker'), {
             'jobs': {},
             'stalled': {}
@@ -157,7 +157,7 @@ class TestWorker(TestQless):
         self.lua('config.set', 0, 'max-worker-age', 3600)
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('complete', 0, 'jid', 'worker', 'queue', {})
+        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         # When we check on workers in a little while, it won't be listed
         self.assertEqual(self.lua('workers', 3600), {})
 

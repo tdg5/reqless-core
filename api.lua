@@ -22,6 +22,10 @@ QlessAPI['config.unset'] = function(now, key)
   return Qless.config.unset(key)
 end
 
+QlessAPI['job.complete'] = function(now, jid, worker, queue, data, ...)
+  return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
+end
+
 -- Return json for the job identified by the provided jid. If the job is not
 -- present, then `nil` is returned
 QlessAPI['job.get'] = function(now, jid)
@@ -46,10 +50,6 @@ end
 
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
-end
-
-QlessAPI.complete = function(now, jid, worker, queue, data, ...)
-  return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
 QlessAPI.failed = function(now, group, start, limit)
@@ -254,6 +254,11 @@ end
 -------------------------------------------------------------------------------
 -- Deprecated APIs
 -------------------------------------------------------------------------------
+
+-- Deprecated. Use job.complete instead.
+QlessAPI.complete = function(now, jid, worker, queue, data, ...)
+  return QlessAPI['job.complete'](now, jid, worker, queue, data, unpack(arg))
+end
 
 -- Deprecated. Use job.get instead.
 function QlessAPI.get(now, jid)
