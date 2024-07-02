@@ -24,6 +24,10 @@ QlessAPI['job.complete'] = function(now, jid, worker, queue, data, ...)
   return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
+QlessAPI['job.depends'] = function(now, jid, command, ...)
+  return Qless.job(jid):depends(now, command, unpack(arg))
+end
+
 QlessAPI['job.fail'] = function(now, jid, worker, group, message, data)
   return Qless.job(jid):fail(now, worker, group, message, data)
 end
@@ -72,10 +76,6 @@ end
 
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
-end
-
-QlessAPI.depends = function(now, jid, command, ...)
-  return Qless.job(jid):depends(now, command, unpack(arg))
 end
 
 QlessAPI.workers = function(now, worker)
@@ -260,6 +260,11 @@ end
 -- Deprecated. Use job.complete instead.
 QlessAPI.complete = function(now, jid, worker, queue, data, ...)
   return QlessAPI['job.complete'](now, jid, worker, queue, data, unpack(arg))
+end
+
+-- Deprecated. Use job.depends instead.
+QlessAPI.depends = function(now, jid, command, ...)
+  return QlessAPI['job.depends'](now, jid, command, unpack(arg))
 end
 
 -- Deprecated. Use job.fail instead.
