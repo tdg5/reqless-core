@@ -52,16 +52,16 @@ QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
+QlessAPI['jobs.failed'] = function(now, group, start, limit)
+  return cjson.encode(Qless.failed(group, start, limit))
+end
+
 QlessAPI['queue.counts'] = function(now, queue)
   return cjson.encode(QlessQueue.counts(now, queue))
 end
 
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
-end
-
-QlessAPI.failed = function(now, group, start, limit)
-  return cjson.encode(Qless.failed(group, start, limit))
 end
 
 QlessAPI.jobs = function(now, state, ...)
@@ -263,6 +263,11 @@ end
 -- Deprecated. Use job.fail instead.
 QlessAPI.fail = function(now, jid, worker, group, message, data)
   return QlessAPI['job.fail'](now, jid, worker, group, message, data)
+end
+
+-- Deprecated. Use jobs.failed instead.
+QlessAPI.failed = function(now, group, start, limit)
+  return QlessAPI['jobs.failed'](now, group, start, limit)
 end
 
 -- Deprecated. Use job.get instead.
