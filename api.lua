@@ -4,13 +4,11 @@
 -------------------------------------------------------------------------------
 local QlessAPI = {}
 
--- Public access
 QlessAPI['config.get'] = function(now, key)
-  if not key then
-    return cjson.encode(Qless.config.get(key))
-  else
+  if key then
     return Qless.config.get(key)
   end
+  return cjson.encode(Qless.config.get(nil))
 end
 
 QlessAPI['config.set'] = function(now, key, value)
