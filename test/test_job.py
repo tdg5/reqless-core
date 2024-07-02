@@ -39,6 +39,15 @@ class TestJob(TestQless):
             {'queue': 'queue', 'what': 'put', 'when': 98},
             {'queue': 'queue', 'what': 'put', 'when': 99}])
 
+    def test_heartbeat_still_works(self):
+        '''Deprecated heartbeat API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 1, 'queue', 'worker', 10)
+        self.lua('heartbeat', 2, 'jid', 'worker', {})
+        self.lua('cancel', 3, 'jid')
+        self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
+            self.lua, 'heartbeat', 4, 'jid', 'worker', {})
+
 class TestRequeue(TestQless):
     def test_requeue_existing_job(self):
         '''Requeueing an existing job is identical to `put`'''
@@ -307,10 +316,10 @@ class TestCancel(TestQless):
         '''Can cancel running jobs, prevents heartbeats'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('heartbeat', 2, 'jid', 'worker', {})
+        self.lua('job.heartbeat', 2, 'jid', 'worker', {})
         self.lua('cancel', 3, 'jid')
         self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
-            self.lua, 'heartbeat', 4, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat', 4, 'jid', 'worker', {})
 
     def test_cancel_retries(self):
         '''Can cancel job that has been failed from retries through retry'''

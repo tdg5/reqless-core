@@ -44,6 +44,10 @@ QlessAPI['job.getMulti'] = function(now, ...)
   return cjson.encode(results)
 end
 
+QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
+  return Qless.job(jid):heartbeat(now, worker, data)
+end
+
 QlessAPI['queue.counts'] = function(now, queue)
   return cjson.encode(QlessQueue.counts(now, queue))
 end
@@ -70,10 +74,6 @@ end
 
 QlessAPI.depends = function(now, jid, command, ...)
   return Qless.job(jid):depends(now, command, unpack(arg))
-end
-
-QlessAPI.heartbeat = function(now, jid, worker, data)
-  return Qless.job(jid):heartbeat(now, worker, data)
 end
 
 QlessAPI.workers = function(now, worker)
@@ -263,6 +263,11 @@ end
 -- Deprecated. Use job.get instead.
 function QlessAPI.get(now, jid)
   return QlessAPI['job.get'](now, jid)
+end
+
+-- Deprecated. Use job.heartbeat instead.
+QlessAPI.heartbeat = function(now, jid, worker, data)
+  return QlessAPI['job.heartbeat'](now, jid, worker, data)
 end
 
 -- Deprecated. Use job.getMulti instead.

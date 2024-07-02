@@ -9,9 +9,9 @@ class TestLocks(TestQless):
     def test_malformed(self):
         '''Enumerate malformed inputs into heartbeat'''
         self.assertMalformed(self.lua, [
-            ('heartbeat', 0),
-            ('heartbeat', 0, 'jid'),
-            ('heartbeat', 0, 'jid', 'worker', '[}')
+            ('job.heartbeat', 0),
+            ('job.heartbeat', 0, 'jid'),
+            ('job.heartbeat', 0, 'jid', 'worker', '[}')
         ])
 
     def setUp(self):
@@ -23,12 +23,12 @@ class TestLocks(TestQless):
         '''Moving ajob should expire any existing locks'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('heartbeat', 2, 'jid', 'worker', {})
+        self.lua('job.heartbeat', 2, 'jid', 'worker', {})
         # Move the job after it's been popped
         self.lua('put', 3, 'worker', 'other', 'jid', 'klass', {}, 0)
         # Now this job cannot be heartbeated
         self.assertRaisesRegexp(redis.ResponseError, r'waiting',
-            self.lua, 'heartbeat',  4, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  4, 'jid', 'worker', {})
 
     def test_lose_lock(self):
         '''When enough time passes, we lose our lock on a job'''
@@ -63,7 +63,7 @@ class TestLocks(TestQless):
                 'spawned_from_jid': False}])
         # When we try to heartbeat, it should raise an exception
         self.assertRaisesRegexp(redis.ResponseError, r'given out to another',
-            self.lua, 'heartbeat', 1000, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat', 1000, 'jid', 'worker', {})
 
     def test_heartbeat(self):
         '''Heartbeating extends the lock'''
@@ -74,16 +74,16 @@ class TestLocks(TestQless):
         self.assertEqual(self.lua('pop', 2, 'queue', 'worker', 10), {})
         # We should see our expiration update after a heartbeat
         self.assertTrue(
-            self.lua('heartbeat', 3, 'jid', 'worker', {}) > job['expires'])
+            self.lua('job.heartbeat', 3, 'jid', 'worker', {}) > job['expires'])
 
     def test_heartbeat_waiting(self):
         '''Only popped jobs can be heartbeated'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertRaisesRegexp(redis.ResponseError, r'waiting',
-            self.lua, 'heartbeat',  1, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  1, 'jid', 'worker', {})
         # Pop is and it should work
         self.lua('pop', 2, 'queue', 'worker', 10)
-        self.lua('heartbeat', 3, 'jid', 'worker', {})
+        self.lua('job.heartbeat', 3, 'jid', 'worker', {})
 
     def test_heartbeat_failed(self):
         '''Cannot heartbeat a failed job'''
@@ -91,28 +91,28 @@ class TestLocks(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('fail', 0, 'jid', 'worker', 'foo', 'bar', {})
         self.assertRaisesRegexp(redis.ResponseError, r'failed',
-            self.lua, 'heartbeat',  0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  0, 'jid', 'worker', {})
 
     def test_heartbeat_depends(self):
         '''Cannot heartbeat a dependent job'''
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertRaisesRegexp(redis.ResponseError, r'depends',
-            self.lua, 'heartbeat',  0, 'b', 'worker', {})
+            self.lua, 'job.heartbeat',  0, 'b', 'worker', {})
 
     def test_heartbeat_scheduled(self):
         '''Cannot heartbeat a scheduled job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.assertRaisesRegexp(redis.ResponseError, r'scheduled',
-            self.lua, 'heartbeat',  0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  0, 'jid', 'worker', {})
 
     def test_heartbeat_nonexistent(self):
         '''Cannot heartbeat a job that doesn't exist'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'heartbeat',  0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  0, 'jid', 'worker', {})
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
-        self.lua('heartbeat', 0, 'jid', 'worker', {})
+        self.lua('job.heartbeat', 0, 'jid', 'worker', {})
 
     def test_heartbeat_completed(self):
         '''Cannot heartbeat a job that has been completed'''
@@ -120,7 +120,7 @@ class TestLocks(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         self.assertRaisesRegexp(redis.ResponseError, r'complete',
-            self.lua, 'heartbeat',  0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  0, 'jid', 'worker', {})
 
     def test_heartbeat_wrong_worker(self):
         '''Only the worker with a job's lock can heartbeat it'''
@@ -128,8 +128,8 @@ class TestLocks(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 10)
         # Another worker can't heartbeat, but we can
         self.assertRaisesRegexp(redis.ResponseError, r'another worker',
-            self.lua, 'heartbeat',  2, 'jid', 'another', {})
-        self.lua('heartbeat', 2, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat',  2, 'jid', 'another', {})
+        self.lua('job.heartbeat', 2, 'jid', 'worker', {})
 
 
 class TestRetries(TestQless):
@@ -243,7 +243,7 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
-            self.lua, 'heartbeat', 0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat', 0, 'jid', 'worker', {})
 
     def test_retry_nonexistent(self):
         '''It's an error to retry a nonexistent job'''
@@ -296,7 +296,7 @@ class TestRetry(TestQless):
         self.lua('pop', 0, 'queue', 'worker', 10)
         self.lua('retry', 0, 'jid', 'queue', 'worker', 0)
         self.assertRaisesRegexp(redis.ResponseError, r'not currently running',
-            self.lua, 'heartbeat', 0, 'jid', 'worker', {})
+            self.lua, 'job.heartbeat', 0, 'jid', 'worker', {})
 
     def test_retry_failed_retries(self):
         '''Retry can be invoked enough to cause it to fail retries'''
