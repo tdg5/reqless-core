@@ -40,9 +40,12 @@ QlessAPI['job.getMulti'] = function(now, ...)
   return cjson.encode(results)
 end
 
--- Get information about a queue or queues
-QlessAPI.queues = function(now, queue)
+QlessAPI['queue.counts'] = function(now, queue)
   return cjson.encode(QlessQueue.counts(now, queue))
+end
+
+QlessAPI['queues.list'] = function(now)
+  return cjson.encode(QlessQueue.counts(now, nil))
 end
 
 QlessAPI.complete = function(now, jid, worker, queue, data, ...)
@@ -260,6 +263,14 @@ end
 -- Deprecated. Use job.getMulti instead.
 function QlessAPI.multiget(now, ...)
   return QlessAPI['job.getMulti'](now, unpack(arg))
+end
+
+-- Deprecated. Use queue.counts or queues.list instead.
+QlessAPI.queues = function(now, queue)
+  if queue then
+    return QlessAPI['queue.counts'](now, queue)
+  end
+  return QlessAPI['queues.list'](now)
 end
 
 -------------------------------------------------------------------------------
