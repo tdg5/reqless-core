@@ -16,6 +16,15 @@ class TestJob(TestQless):
     def test_log(self):
         '''Can add a log to a job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('job.log', 0, 'jid', 'foo', {'foo': 'bar'})
+        self.assertEqual(self.lua('job.get', 0, 'jid')['history'], [
+            {'queue': 'queue', 'what': 'put', 'when': 0},
+            {'foo': 'bar', 'what': 'foo', 'when': 0}
+        ])
+
+    def test_log_still_works(self):
+        '''Deprecated log API still works'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('log', 0, 'jid', 'foo', {'foo': 'bar'})
         self.assertEqual(self.lua('job.get', 0, 'jid')['history'], [
             {'queue': 'queue', 'what': 'put', 'when': 0},
@@ -25,7 +34,7 @@ class TestJob(TestQless):
     def test_log_nonexistent(self):
         '''If a job doesn't exist, logging throws an error'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'log', 0, 'jid', 'foo', {'foo': 'bar'})
+            self.lua, 'job.log', 0, 'jid', 'foo', {'foo': 'bar'})
 
     def test_history(self):
         '''We only keep the most recent max-job-history items in history'''

@@ -54,6 +54,20 @@ QlessAPI['job.heartbeat'] = function(now, jid, worker, data)
   return Qless.job(jid):heartbeat(now, worker, data)
 end
 
+-- Add logging to a particular jid
+QlessAPI['job.log'] = function(now, jid, message, data)
+  assert(jid, "Log(): Argument 'jid' missing")
+  assert(message, "Log(): Argument 'message' missing")
+  if data then
+    data = assert(cjson.decode(data),
+      "Log(): Argument 'data' not cjson: " .. tostring(data))
+  end
+
+  local job = Qless.job(jid)
+  assert(job:exists(), 'Log(): Job ' .. jid .. ' does not exist')
+  job:history(now, message, data)
+end
+
 QlessAPI['job.priority'] = function(now, jid, priority)
   return Qless.job(jid):priority(priority)
 end
@@ -114,20 +128,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
--- Add logging to a particular jid
-QlessAPI['log'] = function(now, jid, message, data)
-  assert(jid, "Log(): Argument 'jid' missing")
-  assert(message, "Log(): Argument 'message' missing")
-  if data then
-    data = assert(cjson.decode(data),
-      "Log(): Argument 'data' not cjson: " .. tostring(data))
-  end
-
-  local job = Qless.job(jid)
-  assert(job:exists(), 'Log(): Job ' .. jid .. ' does not exist')
-  job:history(now, message, data)
 end
 
 QlessAPI['peek'] = function(now, queue, offset, count)
@@ -305,6 +305,11 @@ QlessAPI['jobs'] = function(now, state, ...)
     return QlessAPI['jobs.completed'](now, unpack(arg))
   end
   return QlessAPI['queue.jobsByState'](now, state, unpack(arg))
+end
+
+-- Deprecated. Use job.log instead.
+QlessAPI['log'] = function(now, jid, message, data)
+  return QlessAPI['job.log'](now, jid, message, data)
 end
 
 -- Deprecated. Use job.getMulti instead.
