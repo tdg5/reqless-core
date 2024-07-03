@@ -112,12 +112,12 @@ QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
 end
 
-QlessAPI.tag = function(now, command, ...)
+QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
 end
 
 -- Add logging to a particular jid
-QlessAPI.log = function(now, jid, message, data)
+QlessAPI['log'] = function(now, jid, message, data)
   assert(jid, "Log(): Argument 'jid' missing")
   assert(message, "Log(): Argument 'message' missing")
   if data then
@@ -130,7 +130,7 @@ QlessAPI.log = function(now, jid, message, data)
   job:history(now, message, data)
 end
 
-QlessAPI.peek = function(now, queue, offset, count)
+QlessAPI['peek'] = function(now, queue, offset, count)
   local jids = Qless.queue(queue):peek(now, offset, count)
   local response = {}
   for _, jid in ipairs(jids) do
@@ -139,7 +139,7 @@ QlessAPI.peek = function(now, queue, offset, count)
   return cjson.encode(response)
 end
 
-QlessAPI.pop = function(now, queue, worker, count)
+QlessAPI['pop'] = function(now, queue, worker, count)
   local jids = Qless.queue(queue):pop(now, worker, count)
   local response = {}
   for _, jid in ipairs(jids) do
@@ -148,38 +148,38 @@ QlessAPI.pop = function(now, queue, worker, count)
   return cjson.encode(response)
 end
 
-QlessAPI.pause = function(now, ...)
+QlessAPI['pause'] = function(now, ...)
   return QlessQueue.pause(now, unpack(arg))
 end
 
-QlessAPI.unpause = function(now, ...)
+QlessAPI['unpause'] = function(now, ...)
   return QlessQueue.unpause(unpack(arg))
 end
 
-QlessAPI.cancel = function(now, ...)
+QlessAPI['cancel'] = function(now, ...)
   return Qless.cancel(now, unpack(arg))
 end
 
-QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
+QlessAPI['put'] = function(now, me, queue, jid, klass, data, delay, ...)
   return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
 end
 
-QlessAPI.requeue = function(now, me, queue, jid, ...)
+QlessAPI['requeue'] = function(now, me, queue, jid, ...)
   local job = Qless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
   return QlessAPI.put(now, me, queue, jid, unpack(arg))
 end
 
-QlessAPI.unfail = function(now, queue, group, count)
+QlessAPI['unfail'] = function(now, queue, group, count)
   return Qless.queue(queue):unfail(now, group, count)
 end
 
 -- Recurring job stuff
-QlessAPI.recur = function(now, queue, jid, klass, data, spec, ...)
+QlessAPI['recur'] = function(now, queue, jid, klass, data, spec, ...)
   return Qless.queue(queue):recur(now, jid, klass, data, spec, unpack(arg))
 end
 
-QlessAPI.unrecur = function(now, jid)
+QlessAPI['unrecur'] = function(now, jid)
   return Qless.recurring(jid):unrecur()
 end
 
@@ -203,7 +203,7 @@ QlessAPI['recur.untag'] = function(now, jid, ...)
   return Qless.recurring(jid):untag(unpack(arg))
 end
 
-QlessAPI.length = function(now, queue)
+QlessAPI['length'] = function(now, queue)
   return Qless.queue(queue):length()
 end
 
@@ -270,27 +270,27 @@ end
 -------------------------------------------------------------------------------
 
 -- Deprecated. Use job.complete instead.
-QlessAPI.complete = function(now, jid, worker, queue, data, ...)
+QlessAPI['complete'] = function(now, jid, worker, queue, data, ...)
   return QlessAPI['job.complete'](now, jid, worker, queue, data, unpack(arg))
 end
 
 -- Deprecated. Use job.depends instead.
-QlessAPI.depends = function(now, jid, command, ...)
+QlessAPI['depends'] = function(now, jid, command, ...)
   return QlessAPI['job.depends'](now, jid, command, unpack(arg))
 end
 
 -- Deprecated. Use job.fail instead.
-QlessAPI.fail = function(now, jid, worker, group, message, data)
+QlessAPI['fail'] = function(now, jid, worker, group, message, data)
   return QlessAPI['job.fail'](now, jid, worker, group, message, data)
 end
 
 -- Deprecated. Use jobs.failed instead.
-QlessAPI.failed = function(now, group, start, limit)
+QlessAPI['failed'] = function(now, group, start, limit)
   return QlessAPI['jobs.failed'](now, group, start, limit)
 end
 
 -- Deprecated. Use job.get instead.
-function QlessAPI.get(now, jid)
+QlessAPI['get'] = function(now, jid)
   return QlessAPI['job.get'](now, jid)
 end
 
@@ -300,7 +300,7 @@ QlessAPI.heartbeat = function(now, jid, worker, data)
 end
 
 -- Deprecated. Use jobs.completed or queue.jobs.byState instead.
-QlessAPI.jobs = function(now, state, ...)
+QlessAPI['jobs'] = function(now, state, ...)
   if state == 'complete' then
     return QlessAPI['jobs.completed'](now, unpack(arg))
   end
@@ -308,17 +308,17 @@ QlessAPI.jobs = function(now, state, ...)
 end
 
 -- Deprecated. Use job.getMulti instead.
-function QlessAPI.multiget(now, ...)
+QlessAPI['multiget'] = function(now, ...)
   return QlessAPI['job.getMulti'](now, unpack(arg))
 end
 
 -- Deprecated. Use job.priority instead.
-QlessAPI.priority = function(now, jid, priority)
+QlessAPI['priority'] = function(now, jid, priority)
   return QlessAPI['job.priority'](now, jid, priority)
 end
 
 -- Deprecated. Use queue.counts or queues.list instead.
-QlessAPI.queues = function(now, queue)
+QlessAPI['queues'] = function(now, queue)
   if queue then
     return QlessAPI['queue.counts'](now, queue)
   end
@@ -326,17 +326,17 @@ QlessAPI.queues = function(now, queue)
 end
 
 -- Deprecated. Use job.retry instead.
-QlessAPI.retry = function(now, jid, queue, worker, delay, group, message)
+QlessAPI['retry'] = function(now, jid, queue, worker, delay, group, message)
   return QlessAPI['job.retry'](now, jid, queue, worker, delay, group, message)
 end
 
 -- Deprecated. Use queue.stats instead.
-QlessAPI.stats = function(now, queue, date)
+QlessAPI['stats'] = function(now, queue, date)
   return QlessAPI['queue.stats'](now, queue, date)
 end
 
 -- Deprecated. Use job.timeout instead.
-QlessAPI.timeout = function(now, ...)
+QlessAPI['timeout'] = function(now, ...)
   return QlessAPI['job.timeout'](now, unpack(arg))
 end
 
@@ -354,7 +354,7 @@ QlessAPI['track'] = function(now, command, jid)
 end
 
 -- Deprecated. Use worker.counts or workers.list instead
-QlessAPI.workers = function(now, worker)
+QlessAPI['workers'] = function(now, worker)
   if worker then
     return QlessAPI['worker.counts'](now, worker)
   end
