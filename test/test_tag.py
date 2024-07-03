@@ -150,7 +150,7 @@ class TestTag(TestQless):
 
     def test_recurring(self):
         '''Ensure that jobs spawned from recurring jobs are tagged'''
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {},
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
             'interval', 60, 0, 'tags', ['foo'])
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.assertEqual(

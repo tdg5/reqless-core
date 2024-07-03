@@ -86,7 +86,7 @@ class TestJobs(TestQless):
         jids = map(str, range(0, 10))
         for jid in jids:
             self.lua(
-                'recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 0)
+                'queue.recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 0)
             recurring = self.lua('queue.jobsByState', 0, 'recurring', 'queue')
             self.assertEqual(len(recurring), int(jid) + 1)
             self.assertEqual(int(recurring[-1]), int(jid))
@@ -96,7 +96,7 @@ class TestJobs(TestQless):
         jids = map(str, range(0, 10))
         for jid in jids:
             self.lua(
-                'recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 10)
+                'queue.recur', jid, 'queue', jid, 'klass', {}, 'interval', 60, 10)
             recurring = self.lua('queue.jobsByState', 0, 'recurring', 'queue')
             self.assertEqual(len(recurring), int(jid) + 1)
             self.assertEqual(int(recurring[-1]), int(jid))
@@ -234,7 +234,7 @@ class TestQueue(TestQless):
         '''Discern recurring job counts correctly'''
         expected = dict(self.expected)
         expected['recurring'] = 1
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
         self.assertEqual(self.lua('queues.list', 0), [expected])
 
@@ -242,7 +242,7 @@ class TestQueue(TestQless):
         '''Discern future recurring job counts correctly'''
         expected = dict(self.expected)
         expected['recurring'] = 1
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 10)
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 10)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
         self.assertEqual(self.lua('queues.list', 0), [expected])
 
@@ -279,7 +279,7 @@ class TestQueue(TestQless):
         expected = dict(self.expected)
         expected['name'] = 'another'
         expected['recurring'] = 1
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.lua('recur.update', 0, 'jid', 'queue', 'another')
         self.assertEqual(self.lua('queues.list', 0), [expected, self.expected])
 
@@ -611,7 +611,7 @@ class TestPeek(TestQless):
 
     def test_recurring(self):
         '''We can peek at recurring jobs'''
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 10, 0)
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 10, 0)
         self.assertEqual(len(self.lua('queue.peek', 99, 'queue', 0, 100)), 10)
 
     def test_priority_update(self):
