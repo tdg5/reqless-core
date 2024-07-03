@@ -76,6 +76,12 @@ QlessAPI['job.priority'] = function(now, jid, priority)
   return Qless.job(jid):priority(priority)
 end
 
+QlessAPI['job.requeue'] = function(now, worker, queue, jid, ...)
+  local job = Qless.job(jid)
+  assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
+  return QlessAPI['queue.put'](now, worker, queue, jid, unpack(arg))
+end
+
 QlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
   return Qless.job(jid):retry(now, queue, worker, delay, group, message)
 end
@@ -220,12 +226,6 @@ QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
 end
 
-QlessAPI['requeue'] = function(now, worker, queue, jid, ...)
-  local job = Qless.job(jid)
-  assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
-  return QlessAPI['queue.put'](now, worker, queue, jid, unpack(arg))
-end
-
 QlessAPI['unfail'] = function(now, queue, group, count)
   return Qless.queue(queue):unfail(now, group, count)
 end
@@ -356,6 +356,11 @@ QlessAPI['queues'] = function(now, queue)
     return QlessAPI['queue.counts'](now, queue)
   end
   return QlessAPI['queues.list'](now)
+end
+
+-- Deprecated. Use job.requeue instead.
+QlessAPI['requeue'] = function(now, worker, queue, jid, ...)
+  return QlessAPI['job.requeue'](now, worker, queue, jid, unpack(arg))
 end
 
 -- Deprecated. Use job.retry instead.

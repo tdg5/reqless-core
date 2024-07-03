@@ -61,7 +61,7 @@ class TestRequeue(TestQless):
     def test_requeue_existing_job(self):
         '''Requeueing an existing job is identical to `put`'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
+        self.lua('job.requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('job.get', 0, 'jid')['queue'], 'queue-2')
 
     def test_requeue_cancelled_job(self):
@@ -69,7 +69,7 @@ class TestRequeue(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.cancel', 1, 'jid')
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
-            self.lua, 'requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
+            self.lua, 'job.requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
 
 
     def test_multiget_still_works(self):
@@ -82,7 +82,7 @@ class TestRequeue(TestQless):
         '''Requeueing  a throttled job should maintain correct state'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
         original = self.lua('job.getMulti', 1, 'jid')[0]
-        self.lua('requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
+        self.lua('job.requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
         updated = self.lua('job.getMulti', 3, 'jid')[0]
 
         # throttles and queue change during requeue
@@ -95,6 +95,12 @@ class TestRequeue(TestQless):
         del original['queue']
         del original['history']
         self.assertEqual(updated, original)
+
+    def test_requeue_still_works(self):
+        '''Deprecated requeue API still works'''
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
+        self.assertEqual(self.lua('job.get', 0, 'jid')['queue'], 'queue-2')
 
 class TestComplete(TestQless):
     '''Test how we complete jobs'''
