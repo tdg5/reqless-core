@@ -87,7 +87,7 @@ class TestFail(TestQless):
         self.lua('pop', 1, 'queue', 'worker', 10)
         self.lua('job.fail', 2, 'jid', 'worker', 'group', 'message', {})
         self.lua('put', 3, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(len(self.lua('peek', 4, 'queue', 0, 10)), 1)
+        self.assertEqual(len(self.lua('queue.peek', 4, 'queue', 0, 10)), 1)
 
     def test_fail_waiting(self):
         '''Only popped jobs can be failed'''

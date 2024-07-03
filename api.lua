@@ -110,6 +110,15 @@ QlessAPI["queue.jobsByState"] = function(now, state, ...)
   return Qless.jobs(now, state, unpack(arg))
 end
 
+QlessAPI['queue.peek'] = function(now, queue, offset, count)
+  local jids = Qless.queue(queue):peek(now, offset, count)
+  local response = {}
+  for _, jid in ipairs(jids) do
+    table.insert(response, Qless.job(jid):data())
+  end
+  return cjson.encode(response)
+end
+
 QlessAPI['queue.stats'] = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
 end
@@ -128,15 +137,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI['peek'] = function(now, queue, offset, count)
-  local jids = Qless.queue(queue):peek(now, offset, count)
-  local response = {}
-  for _, jid in ipairs(jids) do
-    table.insert(response, Qless.job(jid):data())
-  end
-  return cjson.encode(response)
 end
 
 QlessAPI['pop'] = function(now, queue, worker, count)
@@ -315,6 +315,11 @@ end
 -- Deprecated. Use job.getMulti instead.
 QlessAPI['multiget'] = function(now, ...)
   return QlessAPI['job.getMulti'](now, unpack(arg))
+end
+
+-- Deprecated. Use queue.peek instead.
+QlessAPI['peek'] = function(now, queue, offset, count)
+  return QlessAPI['queue.peek'](now, queue, offset, count)
 end
 
 -- Deprecated. Use job.priority instead.

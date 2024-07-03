@@ -483,21 +483,21 @@ class TestPeek(TestQless):
     def test_malformed(self):
         '''Enumerate all the ways in which the input can be malformed'''
         self.assertMalformed(self.lua, [
-            ('peek', 12345,),                         # No queue provided
-            ('peek', 12345, 'foo'),                   # No offset or count provided
-            ('peek', 12345, 'foo', 'number'),         # Offset arg malformed, count missing
-            ('peek', 12345, 'foo', 'number', 25),     # Offset arg malformed
-            ('peek', 12345, 'foo', 0),                # No count argument
-            ('peek', 12345, 'foo', 0, 'number'),      # Count arg malformed
+            ('queue.peek', 12345,),                         # No queue provided
+            ('queue.peek', 12345, 'foo'),                   # No offset or count provided
+            ('queue.peek', 12345, 'foo', 'number'),         # Offset arg malformed, count missing
+            ('queue.peek', 12345, 'foo', 'number', 25),     # Offset arg malformed
+            ('queue.peek', 12345, 'foo', 0),                # No count argument
+            ('queue.peek', 12345, 'foo', 0, 'number'),      # Count arg malformed
         ])
 
     def test_basic(self):
         '''Can peek at a single waiting job'''
         # No jobs for an empty queue
-        self.assertEqual(self.lua('peek', 0, 'foo', 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), {})
         self.lua('put', 0, 'worker', 'foo', 'jid', 'klass', {}, 0)
         # And now we should see a single job
-        self.assertEqual(self.lua('peek', 1, 'foo', 0, 10), [{
+        self.assertEqual(self.lua('queue.peek', 1, 'foo', 0, 10), [{
             'data': '{}',
             'dependencies': {},
             'dependents': {},
@@ -519,7 +519,7 @@ class TestPeek(TestQless):
         }])
         # With several jobs in the queue, we should be able to see more
         self.lua('put', 2, 'worker', 'foo', 'jid2', 'klass', {}, 0)
-        self.assertEqual([o['jid'] for o in self.lua('peek', 3, 'foo', 0, 10)], [
+        self.assertEqual([o['jid'] for o in self.lua('queue.peek', 3, 'foo', 0, 10)], [
             'jid', 'jid2'])
 
     def test_basic_with_offset_and_count(self):
@@ -529,7 +529,7 @@ class TestPeek(TestQless):
         self.lua('config.set', 0, 'heartbeat', 0)
 
         queue_name = 'peek_with_offset_and_count'
-        self.assertEqual(self.lua('peek', 0, queue_name, 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 0, queue_name, 0, 10), {})
         now = 0
         for index in range(0, 20):
             now += 1
@@ -541,19 +541,19 @@ class TestPeek(TestQless):
         self.assertEqual(len(jids), 10)
         stalled = self.lua('queue.jobsByState', now + 2, 'stalled', queue_name)
         self.assertEqual(len(stalled), 10)
-        self.assertEqual(len(self.lua('peek', now + 3, queue_name, 0, 10)), 10)
-        self.assertEqual(len(self.lua('peek', now + 4, queue_name, 0, 20)), 20)
-        self.assertEqual(len(self.lua('peek', now + 5, queue_name, 10, 10)), 10)
+        self.assertEqual(len(self.lua('queue.peek', now + 3, queue_name, 0, 10)), 10)
+        self.assertEqual(len(self.lua('queue.peek', now + 4, queue_name, 0, 20)), 20)
+        self.assertEqual(len(self.lua('queue.peek', now + 5, queue_name, 10, 10)), 10)
         self.assertEqual(
-            [o['jid'] for o in self.lua('peek', now + 6, queue_name, 0, 3)],
+            [o['jid'] for o in self.lua('queue.peek', now + 6, queue_name, 0, 3)],
             ['jid-0', 'jid-1', 'jid-2'],
         )
         self.assertEqual(
-            [o['jid'] for o in self.lua('peek', now + 7, queue_name, 10, 3)],
+            [o['jid'] for o in self.lua('queue.peek', now + 7, queue_name, 10, 3)],
             ['jid-10', 'jid-11', 'jid-12'],
         )
         self.assertEqual(
-            [o['jid'] for o in self.lua('peek', now + 8, queue_name, 18, 3)],
+            [o['jid'] for o in self.lua('queue.peek', now + 8, queue_name, 18, 3)],
             ['jid-18', 'jid-19'],
         )
         now += 8
@@ -561,7 +561,7 @@ class TestPeek(TestQless):
         for offset in range(0, 20):
             now += 1
             self.assertEqual(
-                [o['jid'] for o in self.lua('peek', now, queue_name, offset, 1)],
+                [o['jid'] for o in self.lua('queue.peek', now, queue_name, offset, 1)],
                 [f'jid-{offset}'],
             )
 
@@ -573,7 +573,7 @@ class TestPeek(TestQless):
                 'put', 0, 'worker', 'queue', jid, 'klass', {}, 0, 'priority', jid)
 
         # Peek at the jobs, and they should be in the right order
-        jids = [job['jid'] for job in self.lua('peek', 1, 'queue', 0, 100)]
+        jids = [job['jid'] for job in self.lua('queue.peek', 1, 'queue', 0, 100)]
         self.assertEqual(jids, list(map(str, range(9, -11, -1))))
 
     def test_time_order(self):
@@ -581,30 +581,30 @@ class TestPeek(TestQless):
         # Put 100 jobs on with different times
         for time in range(100):
             self.lua('put', time, 'worker', 'queue', time, 'klass', {}, 0)
-        jids = [job['jid'] for job in self.lua('peek', 200, 'queue', 0, 100)]
+        jids = [job['jid'] for job in self.lua('queue.peek', 200, 'queue', 0, 100)]
         self.assertEqual(jids, list(map(str, range(100))))
 
     def test_move(self):
         '''When we move a job, it should be visible in the new, not old'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('put', 0, 'worker', 'other', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('peek', 1, 'queue', 0, 10), {})
-        self.assertEqual(self.lua('peek', 1, 'other', 0, 10)[0]['jid'], 'jid')
+        self.assertEqual(self.lua('queue.peek', 1, 'queue', 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 1, 'other', 0, 10)[0]['jid'], 'jid')
 
     def test_recurring(self):
         '''We can peek at recurring jobs'''
         self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 10, 0)
-        self.assertEqual(len(self.lua('peek', 99, 'queue', 0, 100)), 10)
+        self.assertEqual(len(self.lua('queue.peek', 99, 'queue', 0, 100)), 10)
 
     def test_priority_update(self):
         '''We can change a job's priority'''
         self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0, 'priority', 0)
         self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'priority', 1)
         self.assertEqual(['b', 'a'],
-            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
+            [j['jid'] for j in self.lua('queue.peek', 0, 'queue', 0, 100)])
         self.lua('job.priority', 0, 'a', 2)
         self.assertEqual(['a', 'b'],
-            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
+            [j['jid'] for j in self.lua('queue.peek', 0, 'queue', 0, 100)])
 
     def test_priority_still_works(self):
         '''Deprecated priority API still works'''
@@ -615,6 +615,37 @@ class TestPeek(TestQless):
         self.lua('priority', 0, 'a', 2)
         self.assertEqual(['a', 'b'],
             [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
+
+    def test_peek_still_works(self):
+        '''Deprecated peek API still works'''
+        # No jobs for an empty queue
+        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), {})
+        self.lua('put', 0, 'worker', 'foo', 'jid', 'klass', {}, 0)
+        # And now we should see a single job
+        self.assertEqual(self.lua('queue.peek', 1, 'foo', 0, 10), [{
+            'data': '{}',
+            'dependencies': {},
+            'dependents': {},
+            'expires': 0,
+            'failure': {},
+            'history': [{'queue': 'foo', 'what': 'put', 'when': 0}],
+            'jid': 'jid',
+            'klass': 'klass',
+            'priority': 0,
+            'queue': 'foo',
+            'remaining': 5,
+            'retries': 5,
+            'state': 'waiting',
+            'tags': {},
+            'tracked': False,
+            'throttles': ['ql:q:foo'],
+            'worker': u'',
+            'spawned_from_jid': False
+        }])
+        # With several jobs in the queue, we should be able to see more
+        self.lua('put', 2, 'worker', 'foo', 'jid2', 'klass', {}, 0)
+        self.assertEqual([o['jid'] for o in self.lua('queue.peek', 3, 'foo', 0, 10)], [
+            'jid', 'jid2'])
 
 
 class TestPop(TestQless):
@@ -797,7 +828,7 @@ class TestPop(TestQless):
         self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
         self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [])
         self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2'])
-        waiting_jobs = self.lua('peek', 8, 'queue', 0, 99)
+        waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid3', 'jid4'])
 
     def test_pop_retry(self):
@@ -816,7 +847,7 @@ class TestPop(TestQless):
         self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
         self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [b'jid3'])
         self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2'])
-        waiting_jobs = self.lua('peek', 8, 'queue', 0, 99)
+        waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid4'])
 
     def test_pop_retry_queue_config(self):
@@ -853,5 +884,5 @@ class TestPop(TestQless):
         self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
         self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [])
         self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2', b'jid3'])
-        waiting_jobs = self.lua('peek', 8, 'queue', 0, 99)
+        waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid4'])

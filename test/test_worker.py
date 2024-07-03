@@ -29,7 +29,7 @@ class TestWorker(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         job = self.lua('pop', 1, 'queue', 'worker', 10)[0]
         expires = job['expires'] + 10
-        self.lua('peek', expires, 'queue', 0, 10)
+        self.lua('queue.peek', expires, 'queue', 0, 10)
         self.assertEqual(self.lua('worker.counts', expires, 'worker'), {
             'jobs': {},
             'stalled': ['jid']
