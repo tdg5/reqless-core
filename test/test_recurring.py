@@ -97,7 +97,7 @@ class TestRecurring(TestQless):
     def test_priority(self):
         '''Recurring jobs can be given priority'''
         # Put one job with low priority
-        self.lua('put', 0, 'worker', 'queue', 'low', 'klass', {}, 0, 'priority', 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'low', 'klass', {}, 0, 'priority', 0)
         self.lua('recur', 0, 'queue', 'high', 'klass', {},
             'interval', 60, 0, 'priority', 10)
         jobs = self.lua('queue.pop', 0, 'queue', 'worker', 10)

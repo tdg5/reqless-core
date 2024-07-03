@@ -128,6 +128,10 @@ QlessAPI['queue.pop'] = function(now, queue, worker, count)
   return cjson.encode(response)
 end
 
+QlessAPI['queue.put'] = function(now, worker, queue, jid, klass, data, delay, ...)
+  return Qless.queue(queue):put(now, worker, jid, klass, data, delay, unpack(arg))
+end
+
 QlessAPI['queue.stats'] = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
 end
@@ -160,14 +164,10 @@ QlessAPI['cancel'] = function(now, ...)
   return Qless.cancel(now, unpack(arg))
 end
 
-QlessAPI['put'] = function(now, me, queue, jid, klass, data, delay, ...)
-  return Qless.queue(queue):put(now, me, jid, klass, data, delay, unpack(arg))
-end
-
-QlessAPI['requeue'] = function(now, me, queue, jid, ...)
+QlessAPI['requeue'] = function(now, worker, queue, jid, ...)
   local job = Qless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
-  return QlessAPI.put(now, me, queue, jid, unpack(arg))
+  return QlessAPI['queue.put'](now, worker, queue, jid, unpack(arg))
 end
 
 QlessAPI['unfail'] = function(now, queue, group, count)
@@ -330,6 +330,11 @@ end
 -- Deprecated. Use job.priority instead.
 QlessAPI['priority'] = function(now, jid, priority)
   return QlessAPI['job.priority'](now, jid, priority)
+end
+
+-- Deprecated. Use queue.pop instead.
+QlessAPI['put'] = function(now, worker, queue, jid, klass, data, delay, ...)
+  return QlessAPI['queue.put'](now, worker, queue, jid, klass, data, delay, unpack(arg))
 end
 
 -- Deprecated. Use queue.counts or queues.list instead.

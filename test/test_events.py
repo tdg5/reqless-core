@@ -7,7 +7,7 @@ class TestEvents(TestQless):
     '''Check for all the events we expect'''
     def test_track(self):
         '''We should hear chatter about tracking and untracking jobs'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         with self.lua:
             self.lua('job.track', 0, 'jid')
         self.assertEqual(self.lua.log, [{
@@ -24,7 +24,7 @@ class TestEvents(TestQless):
 
     def test_track_canceled(self):
         '''Canceling a tracked job should spawn some data'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         with self.lua:
             self.lua('cancel', 0, 'jid')
@@ -39,7 +39,7 @@ class TestEvents(TestQless):
 
     def test_track_completed(self):
         '''Tracked jobs get extra notifications when they complete'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
@@ -54,7 +54,7 @@ class TestEvents(TestQless):
 
     def test_track_fail(self):
         '''We should hear chatter when failing a job'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
@@ -70,7 +70,7 @@ class TestEvents(TestQless):
 
     def test_track_popped(self):
         '''We should hear chatter when popping a tracked job'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         with self.lua:
             self.lua('queue.pop', 0, 'queue', 'worker', 10)
@@ -81,10 +81,10 @@ class TestEvents(TestQless):
 
     def test_track_put(self):
         '''We should hear chatter when putting a tracked job'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         with self.lua:
-            self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+            self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data': b'{"jid":"jid","event":"put","queue":"queue"}'
@@ -95,7 +95,7 @@ class TestEvents(TestQless):
 
     def test_track_stalled(self):
         '''We should hear chatter when a job stalls'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         with self.lua:
@@ -114,7 +114,7 @@ class TestEvents(TestQless):
     def test_failed_retries(self):
         '''We should hear chatter when a job fails from retries'''
         self.lua('config.set', 0, 'grace-period', 0)
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         with self.lua:
             self.assertEqual(self.lua(
@@ -133,7 +133,7 @@ class TestEvents(TestQless):
 
     def test_advance(self):
         '''We should hear chatter when completing and advancing a job'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
             self.lua(
@@ -146,7 +146,7 @@ class TestEvents(TestQless):
 
     def test_timeout(self):
         '''We should hear chatter when a job times out'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
             self.lua('job.timeout', 0, 'jid')
@@ -161,7 +161,7 @@ class TestEvents(TestQless):
     def test_put(self):
         '''We should hear chatter when a job is put into a queueu'''
         with self.lua:
-            self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+            self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data': b'{"jid":"jid","event":"put","queue":"queue"}'
@@ -169,10 +169,10 @@ class TestEvents(TestQless):
 
     def test_reput(self):
         '''When we put a popped job into a queue, it informs the worker'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
-            self.lua('put', 0, 'another', 'another', 'jid', 'klass', {}, 10)
+            self.lua('queue.put', 0, 'another', 'another', 'jid', 'klass', {}, 10)
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data': b'{"jid":"jid","event":"put","queue":"another"}'
@@ -205,7 +205,7 @@ class TestEvents(TestQless):
 
     def test_cancel_waiting(self):
         '''We should hear chatter about canceling waiting jobs'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         with self.lua:
             self.lua('cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
@@ -216,7 +216,7 @@ class TestEvents(TestQless):
 
     def test_cancel_running(self):
         '''We should hear chatter about canceling running jobs'''
-        self.lua('put', 0, 'worker', 'q', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'q', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'q', 'wrk', 10)
         with self.lua:
             self.lua('cancel', 0, 'jid')
@@ -232,8 +232,8 @@ class TestEvents(TestQless):
 
     def test_cancel_depends(self):
         '''We should hear chatter about canceling dependent jobs'''
-        self.lua('put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
-        self.lua('put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
+        self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         with self.lua:
             self.lua('cancel', 0, 'b')
         self.assertEqual(self.lua.log, [{
@@ -244,7 +244,7 @@ class TestEvents(TestQless):
 
     def test_cancel_scheduled(self):
         '''We should hear chatter about canceling scheduled jobs'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
         with self.lua:
             self.lua('cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
@@ -255,7 +255,7 @@ class TestEvents(TestQless):
 
     def test_cancel_failed(self):
         '''We should hear chatter about canceling failed jobs'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         with self.lua:
@@ -268,11 +268,11 @@ class TestEvents(TestQless):
 
     def test_move_lock(self):
         '''We should /not/ get lock lost events for moving a job we own'''
-        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
             # Put the job under the same worker who owns it now
-            self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+            self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data': b'{"jid":"jid","event":"put","queue":"queue"}'

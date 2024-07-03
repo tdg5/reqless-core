@@ -16,8 +16,8 @@ class TestGeneral(TestQless):
 
     def test_no_time(self):
         '''If we neglect to provide a time, it should throw an error'''
-        self.assertRaises(redis.ResponseError, self.lua, 'put')
+        self.assertRaises(redis.ResponseError, self.lua, 'queue.put')
 
     def test_malformed_time(self):
         '''If we provide a non-numeric time, it should throw an error'''
-        self.assertRaises(redis.ResponseError, self.lua, 'put', 'foo')
+        self.assertRaises(redis.ResponseError, self.lua, 'queue.put', 'foo')
