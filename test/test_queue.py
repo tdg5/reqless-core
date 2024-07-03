@@ -261,7 +261,7 @@ class TestQueue(TestQless):
         self.assertEqual(self.lua('queues.list', 0), [expected])
 
         # Once unpaused, we should be able to pop jobs off
-        self.lua('unpause', 0, 'queue')
+        self.lua('queue.unpause', 0, 'queue')
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 10)
 
     def test_advance(self):
@@ -299,7 +299,7 @@ class TestQueue(TestQless):
         self.assertEqual(self.lua('queues', 0, 'queue'), expected)
         self.assertEqual(self.lua('queues', 0), [expected])
 
-    def test_pause_still_works(self):
+    def test_pause_and_unpause_still_work(self):
         '''Deprecated pause API still works'''
         jids = map(str, range(10))
         for jid in jids:

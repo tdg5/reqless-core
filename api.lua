@@ -144,6 +144,10 @@ QlessAPI['queue.stats'] = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
 end
 
+QlessAPI['queue.unpause'] = function(now, ...)
+  return QlessQueue.unpause(unpack(arg))
+end
+
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
@@ -158,10 +162,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI['unpause'] = function(now, ...)
-  return QlessQueue.unpause(unpack(arg))
 end
 
 QlessAPI['requeue'] = function(now, worker, queue, jid, ...)
@@ -381,6 +381,11 @@ QlessAPI['track'] = function(now, command, jid)
   end
 
   return QlessAPI['jobs.tracked'](now)
+end
+
+-- Deprecated. Use queue.unpause instead.
+QlessAPI['unpause'] = function(now, ...)
+  return QlessAPI['queue.unpause'](now, unpack(arg))
 end
 
 -- Deprecated. Use worker.counts or workers.list instead
