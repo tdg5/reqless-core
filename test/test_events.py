@@ -9,14 +9,14 @@ class TestEvents(TestQless):
         '''We should hear chatter about tracking and untracking jobs'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         with self.lua:
-            self.lua('track', 0, 'track', 'jid')
+            self.lua('job.track', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:track',
             'data': b'jid'
         }])
 
         with self.lua:
-            self.lua('track', 0, 'untrack', 'jid')
+            self.lua('job.untrack', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:untrack',
             'data': b'jid'
@@ -25,7 +25,7 @@ class TestEvents(TestQless):
     def test_track_canceled(self):
         '''Canceling a tracked job should spawn some data'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         with self.lua:
             self.lua('cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
@@ -40,7 +40,7 @@ class TestEvents(TestQless):
     def test_track_completed(self):
         '''Tracked jobs get extra notifications when they complete'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
             self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
@@ -55,7 +55,7 @@ class TestEvents(TestQless):
     def test_track_fail(self):
         '''We should hear chatter when failing a job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
             self.lua('job.fail', 0, 'jid', 'worker', 'grp', 'mess', {})
@@ -71,7 +71,7 @@ class TestEvents(TestQless):
     def test_track_popped(self):
         '''We should hear chatter when popping a tracked job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         with self.lua:
             self.lua('pop', 0, 'queue', 'worker', 10)
         self.assertEqual(self.lua.log, [{
@@ -82,7 +82,7 @@ class TestEvents(TestQless):
     def test_track_put(self):
         '''We should hear chatter when putting a tracked job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         with self.lua:
             self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua.log, [{
@@ -96,7 +96,7 @@ class TestEvents(TestQless):
     def test_track_stalled(self):
         '''We should hear chatter when a job stalls'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 0, 'track', 'jid')
+        self.lua('job.track', 0, 'jid')
         job = self.lua('pop', 0, 'queue', 'worker', 10)[0]
         with self.lua:
             self.lua('pop', job['expires'] + 10, 'queue', 'worker', 10)

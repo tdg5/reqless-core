@@ -68,12 +68,24 @@ QlessAPI['job.timeout'] = function(now, ...)
   end
 end
 
+QlessAPI['job.track'] = function(now, jid)
+  return cjson.encode(Qless.track(now, 'track', jid))
+end
+
+QlessAPI['job.untrack'] = function(now, jid)
+  return cjson.encode(Qless.track(now, 'untrack', jid))
+end
+
 QlessAPI["jobs.completed"] = function(now, offset, limit)
   return Qless.jobs(now, 'complete', offset, limit)
 end
 
 QlessAPI['jobs.failed'] = function(now, group, start, limit)
   return cjson.encode(Qless.failed(group, start, limit))
+end
+
+QlessAPI['jobs.tracked'] = function(now)
+  return cjson.encode(Qless.track(now))
 end
 
 QlessAPI['queue.counts'] = function(now, queue)
@@ -98,10 +110,6 @@ end
 
 QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
-end
-
-QlessAPI.track = function(now, command, jid)
-  return cjson.encode(Qless.track(now, command, jid))
 end
 
 QlessAPI.tag = function(now, command, ...)
@@ -330,6 +338,19 @@ end
 -- Deprecated. Use job.timeout instead.
 QlessAPI.timeout = function(now, ...)
   return QlessAPI['job.timeout'](now, unpack(arg))
+end
+
+-- Deprecated. Use job.track, job.untrack, or jobs.tracked instead.
+QlessAPI['track'] = function(now, command, jid)
+  if command == 'track' then
+    return QlessAPI['job.track'](now, jid)
+  end
+
+  if command == 'untrack' then
+    return QlessAPI['job.untrack'](now, jid)
+  end
+
+  return QlessAPI['jobs.tracked'](now)
 end
 
 -- Deprecated. Use worker.counts or workers.list instead
