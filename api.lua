@@ -110,6 +110,10 @@ QlessAPI['queue.counts'] = function(now, queue)
   return cjson.encode(QlessQueue.counts(now, queue))
 end
 
+QlessAPI['queue.forget'] = function(now, ...)
+  QlessQueue.deregister(unpack(arg))
+end
+
 QlessAPI["queue.jobsByState"] = function(now, state, ...)
   return Qless.jobs(now, state, unpack(arg))
 end
@@ -148,12 +152,60 @@ QlessAPI['queue.stats'] = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
 end
 
+QlessAPI['queue.throttle.get'] = function(now, queue)
+  local data = Qless.throttle(QlessQueue.ns .. queue):data()
+  if data then
+    return cjson.encode(data)
+  end
+end
+
+QlessAPI['queue.throttle.set'] = function(now, queue, max)
+  Qless.throttle(QlessQueue.ns .. queue):set({maximum = max}, 0)
+end
+
 QlessAPI['queue.unpause'] = function(now, ...)
   return QlessQueue.unpause(unpack(arg))
 end
 
 QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
+end
+
+QlessAPI['throttle.delete'] = function(now, tid)
+  return Qless.throttle(tid):unset()
+end
+
+QlessAPI['throttle.get'] = function(now, tid)
+  return cjson.encode(Qless.throttle(tid):data())
+end
+
+QlessAPI['throttle.locks'] = function(now, tid)
+  return Qless.throttle(tid).locks.members()
+end
+
+QlessAPI['throttle.pending'] = function(now, tid)
+  return Qless.throttle(tid).pending.members()
+end
+
+-- releases the set of jids from the specified throttle.
+QlessAPI['throttle.release'] = function(now, tid, ...)
+  local throttle = Qless.throttle(tid)
+
+  for _, jid in ipairs(arg) do
+    throttle:release(now, jid)
+  end
+end
+
+QlessAPI['throttle.set'] = function(now, tid, max, ...)
+  local expiration = unpack(arg)
+  local data = {
+    maximum = max
+  }
+  Qless.throttle(tid):set(data, tonumber(expiration or 0))
+end
+
+QlessAPI['throttle.ttl'] = function(now, tid)
+  return Qless.throttle(tid):ttl()
 end
 
 QlessAPI['worker.counts'] = function(now, worker)
@@ -209,60 +261,6 @@ end
 
 QlessAPI['worker.deregister'] = function(now, ...)
   return QlessWorker.deregister(unpack(arg))
-end
-
-QlessAPI['queue.forget'] = function(now, ...)
-  QlessQueue.deregister(unpack(arg))
-end
-
-QlessAPI['queue.throttle.get'] = function(now, queue)
-  local data = Qless.throttle(QlessQueue.ns .. queue):data()
-  if not data then
-    return nil
-  end
-  return cjson.encode(data)
-end
-
-QlessAPI['queue.throttle.set'] = function(now, queue, max)
-  Qless.throttle(QlessQueue.ns .. queue):set({maximum = max}, 0)
-end
-
--- Throttle apis
-QlessAPI['throttle.set'] = function(now, tid, max, ...)
-  local expiration = unpack(arg)
-  local data = {
-    maximum = max
-  }
-  Qless.throttle(tid):set(data, tonumber(expiration or 0))
-end
-
-QlessAPI['throttle.get'] = function(now, tid)
-  return cjson.encode(Qless.throttle(tid):data())
-end
-
-QlessAPI['throttle.delete'] = function(now, tid)
-  return Qless.throttle(tid):unset()
-end
-
-QlessAPI['throttle.locks'] = function(now, tid)
-  return Qless.throttle(tid).locks.members()
-end
-
-QlessAPI['throttle.pending'] = function(now, tid)
-  return Qless.throttle(tid).pending.members()
-end
-
-QlessAPI['throttle.ttl'] = function(now, tid)
-  return Qless.throttle(tid):ttl()
-end
-
--- releases the set of jids from the specified throttle.
-QlessAPI['throttle.release'] = function(now, tid, ...)
-  local throttle = Qless.throttle(tid)
-
-  for _, jid in ipairs(arg) do
-    throttle:release(now, jid)
-  end
 end
 
 -------------------------------------------------------------------------------
