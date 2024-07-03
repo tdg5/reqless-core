@@ -252,7 +252,7 @@ class TestRelease(TestQless):
     self.assertEqual(self.lua('throttle.locks', 3, 'tid'), [b'jid1'])
     self.assertEqual(self.lua('throttle.pending', 4, 'tid'), [b'jid2'])
     self.assertEqual(self.lua('queue.jobsByState', 5, 'throttled', 'queue'), [b'jid2'])
-    self.lua('timeout', 6, 'jid1')
+    self.lua('job.timeout', 6, 'jid1')
     self.assertEqual(self.lua('throttle.locks', 7, 'tid'), [])
     self.assertEqual(self.lua('throttle.pending', 8, 'tid'), [])
     self.assertEqual(self.lua('queue.jobsByState', 9, 'throttled', 'queue'), [])

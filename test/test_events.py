@@ -149,7 +149,7 @@ class TestEvents(TestQless):
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('pop', 0, 'queue', 'worker', 10)
         with self.lua:
-            self.lua('timeout', 0, 'jid')
+            self.lua('job.timeout', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:w:worker',
             'data': b'{"jid":"jid","event":"lock_lost","worker":"worker"}'

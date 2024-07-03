@@ -62,6 +62,12 @@ QlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
   return Qless.job(jid):retry(now, queue, worker, delay, group, message)
 end
 
+QlessAPI['job.timeout'] = function(now, ...)
+  for _, jid in ipairs(arg) do
+    Qless.job(jid):timeout(now)
+  end
+end
+
 QlessAPI["jobs.completed"] = function(now, offset, limit)
   return Qless.jobs(now, 'complete', offset, limit)
 end
@@ -144,12 +150,6 @@ end
 
 QlessAPI.cancel = function(now, ...)
   return Qless.cancel(now, unpack(arg))
-end
-
-QlessAPI.timeout = function(now, ...)
-  for _, jid in ipairs(arg) do
-    Qless.job(jid):timeout(now)
-  end
 end
 
 QlessAPI.put = function(now, me, queue, jid, klass, data, delay, ...)
@@ -325,6 +325,11 @@ end
 -- Deprecated. Use queue.stats instead.
 QlessAPI.stats = function(now, queue, date)
   return QlessAPI['queue.stats'](now, queue, date)
+end
+
+-- Deprecated. Use job.timeout instead.
+QlessAPI.timeout = function(now, ...)
+  return QlessAPI['job.timeout'](now, unpack(arg))
 end
 
 -- Deprecated. Use worker.counts or workers.list instead

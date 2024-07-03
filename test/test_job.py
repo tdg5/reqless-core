@@ -271,6 +271,23 @@ class TestComplete(TestQless):
         # Ensure that it shows up everywhere it should
         self.assertEqual(self.lua('job.get', 3, 'jid')['state'], 'complete')
 
+class TestTimeout(TestQless):
+    '''Basic timeout works'''
+    def test_timeout_running(self):
+        '''You can timeout running jobs'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 1, 'queue', 'worker', 1)
+        self.lua('job.timeout', 0, 'jid')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'stalled')
+
+    '''Deprecated timeout API still works'''
+    def test_timeout_running(self):
+        '''You can timeout running jobs'''
+        self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('pop', 1, 'queue', 'worker', 1)
+        self.lua('timeout', 0, 'jid')
+        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'stalled')
+
 class TestCancel(TestQless):
     '''Canceling jobs'''
     def test_cancel_waiting(self):
