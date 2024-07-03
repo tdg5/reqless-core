@@ -20,6 +20,10 @@ QlessAPI['config.unset'] = function(now, key)
   return Qless.config.unset(key)
 end
 
+QlessAPI['job.cancel'] = function(now, ...)
+  return Qless.cancel(now, unpack(arg))
+end
+
 QlessAPI['job.complete'] = function(now, jid, worker, queue, data, ...)
   return Qless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
@@ -160,10 +164,6 @@ QlessAPI['unpause'] = function(now, ...)
   return QlessQueue.unpause(unpack(arg))
 end
 
-QlessAPI['cancel'] = function(now, ...)
-  return Qless.cancel(now, unpack(arg))
-end
-
 QlessAPI['requeue'] = function(now, worker, queue, jid, ...)
   local job = Qless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
@@ -268,6 +268,11 @@ end
 -------------------------------------------------------------------------------
 -- Deprecated APIs
 -------------------------------------------------------------------------------
+
+-- Deprecated. Use job.cancel instead.
+QlessAPI['cancel'] = function(now, ...)
+  return QlessAPI['job.cancel'](now, unpack(arg))
+end
 
 -- Deprecated. Use job.complete instead.
 QlessAPI['complete'] = function(now, jid, worker, queue, data, ...)

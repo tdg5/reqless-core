@@ -27,7 +27,7 @@ class TestEvents(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('job.track', 0, 'jid')
         with self.lua:
-            self.lua('cancel', 0, 'jid')
+            self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -207,7 +207,7 @@ class TestEvents(TestQless):
         '''We should hear chatter about canceling waiting jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         with self.lua:
-            self.lua('cancel', 0, 'jid')
+            self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -219,7 +219,7 @@ class TestEvents(TestQless):
         self.lua('queue.put', 0, 'worker', 'q', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'q', 'wrk', 10)
         with self.lua:
-            self.lua('cancel', 0, 'jid')
+            self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -235,7 +235,7 @@ class TestEvents(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         with self.lua:
-            self.lua('cancel', 0, 'b')
+            self.lua('job.cancel', 0, 'b')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -246,7 +246,7 @@ class TestEvents(TestQless):
         '''We should hear chatter about canceling scheduled jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
         with self.lua:
-            self.lua('cancel', 0, 'jid')
+            self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':
@@ -259,7 +259,7 @@ class TestEvents(TestQless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         with self.lua:
-            self.lua('cancel', 0, 'jid')
+            self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':

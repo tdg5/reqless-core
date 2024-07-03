@@ -89,7 +89,7 @@ class TestDependencies(TestQless):
         '''If an entire dependency chain is cancelled together, it's ok'''
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
-        self.lua('cancel', 2, 'a', 'b')
+        self.lua('job.cancel', 2, 'a', 'b')
         self.assertEqual(self.lua('job.get', 3, 'a'), None)
         self.assertEqual(self.lua('job.get', 4, 'b'), None)
 
@@ -100,13 +100,13 @@ class TestDependencies(TestQless):
         self.lua('queue.put', 2, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['b'])
         # Now, we'll only cancel part of this chain and see that it fails
         self.assertRaisesRegexp(redis.ResponseError, r'is a dependency',
-            self.lua, 'cancel', 3, 'a', 'b')
+            self.lua, 'job.cancel', 3, 'a', 'b')
 
     def test_cancel_with_missing_jobs(self):
         '''If some jobs are already canceled, it's ok'''
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
-        self.lua('cancel', 2, 'a', 'b', 'c')
+        self.lua('job.cancel', 2, 'a', 'b', 'c')
         self.assertEqual(self.lua('job.get', 3, 'a'), None)
         self.assertEqual(self.lua('job.get', 4, 'b'), None)
 
@@ -114,7 +114,7 @@ class TestDependencies(TestQless):
         '''Can bulk cancel jobs independent of the order'''
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
-        self.lua('cancel', 2, 'b', 'a')
+        self.lua('job.cancel', 2, 'b', 'a')
         self.assertEqual(self.lua('job.get', 3, 'a'), None)
         self.assertEqual(self.lua('job.get', 4, 'b'), None)
 

@@ -66,7 +66,7 @@ class TestWorker(TestQless):
             'stalled': {}
         })
         # And now, we'll cancel it, and it should disappear
-        self.lua('cancel', 3, 'jid')
+        self.lua('job.cancel', 3, 'jid')
         self.assertEqual(self.lua('worker.counts', 4, 'worker'), {
             'jobs': {},
             'stalled': {}

@@ -53,7 +53,7 @@ class TestJob(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.lua('heartbeat', 2, 'jid', 'worker', {})
-        self.lua('cancel', 3, 'jid')
+        self.lua('job.cancel', 3, 'jid')
         self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
             self.lua, 'heartbeat', 4, 'jid', 'worker', {})
 
@@ -67,7 +67,7 @@ class TestRequeue(TestQless):
     def test_requeue_cancelled_job(self):
         '''Requeueing a cancelled (or non-existent) job fails'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('cancel', 1, 'jid')
+        self.lua('job.cancel', 1, 'jid')
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
             self.lua, 'requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
 
@@ -261,7 +261,7 @@ class TestComplete(TestQless):
         # When cancelled
         self.lua('queue.put', 2, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['abc'])
         self.assertEqual(self.lua('tag', 3, 'get', 'abc', 0, 0)['jobs'], ['jid'])
-        self.lua('cancel', 4, 'jid', 'worker', 'queue', {})
+        self.lua('job.cancel', 4, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('tag', 5, 'get', 'abc', 0, 0)['jobs'], {})
         self.assertEqual(self.redis.zrange('ql:tags', 0, -1), [])
         # When complete
@@ -302,14 +302,14 @@ class TestCancel(TestQless):
     def test_cancel_waiting(self):
         '''You can cancel waiting jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('cancel', 0, 'jid')
+        self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
     def test_cancel_depends(self):
         '''You can cancel dependent job'''
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
-        self.lua('cancel', 0, 'b')
+        self.lua('job.cancel', 0, 'b')
         self.assertEqual(self.lua('job.get', 0, 'b'), None)
         self.assertEqual(self.lua('job.get', 0, 'a')['dependencies'], {})
 
@@ -318,24 +318,24 @@ class TestCancel(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertRaisesRegexp(redis.ResponseError, r'dependency',
-            self.lua, 'cancel', 0, 'a')
+            self.lua, 'job.cancel', 0, 'a')
 
     def test_cancel_scheduled(self):
         '''You can cancel scheduled jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
-        self.lua('cancel', 0, 'jid')
+        self.lua('job.cancel', 0, 'jid')
         self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
     def test_cancel_nonexistent(self):
         '''Can cancel jobs that do not exist without failing'''
-        self.lua('cancel', 0, 'jid')
+        self.lua('job.cancel', 0, 'jid')
 
     def test_cancel_failed(self):
         '''Can cancel failed jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
-        self.lua('cancel', 2, 'jid')
+        self.lua('job.cancel', 2, 'jid')
         self.assertEqual(self.lua('job.get', 3, 'jid'), None)
 
     def test_cancel_running(self):
@@ -343,7 +343,7 @@ class TestCancel(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.lua('job.heartbeat', 2, 'jid', 'worker', {})
-        self.lua('cancel', 3, 'jid')
+        self.lua('job.cancel', 3, 'jid')
         self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
             self.lua, 'job.heartbeat', 4, 'jid', 'worker', {})
 
@@ -353,7 +353,7 @@ class TestCancel(TestQless):
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.assertEqual(self.lua('job.get', 2, 'jid')['state'], 'running')
         self.lua('job.retry', 3, 'jid', 'queue', 'worker')
-        self.lua('cancel', 4, 'jid')
+        self.lua('job.cancel', 4, 'jid')
         self.assertEqual(self.lua('job.get', 5, 'jid'), None)
 
     def test_cancel_pop_retries(self):
@@ -363,8 +363,14 @@ class TestCancel(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.lua('queue.pop', 2, 'queue', 'worker', 10)
-        self.lua('cancel', 3, 'jid')
+        self.lua('job.cancel', 3, 'jid')
         self.assertEqual(self.lua('job.get', 4, 'jid'), None)
+
+    def test_cancel_still_works(self):
+        '''Deprecated cancel API still works'''
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('cancel', 0, 'jid')
+        self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
 
 class TestThrottles(TestQless):

@@ -95,7 +95,7 @@ class TestTag(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('tag', 0, 'get', 'foo', 0, 10)['jobs'], ['jid'])
-        self.lua('cancel', 0, 'jid')
+        self.lua('job.cancel', 0, 'jid')
         self.assertEqual(
             self.lua('tag', 0, 'get', 'foo', 0, 10)['jobs'], {})
 
