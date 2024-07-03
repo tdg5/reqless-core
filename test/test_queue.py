@@ -252,7 +252,7 @@ class TestQueue(TestQless):
         for jid in jids:
             self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         # After pausing, we can't get the jobs, and the state reflects it
-        self.lua('pause', 0, 'queue')
+        self.lua('queue.pause', 0, 'queue')
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 0)
         expected = dict(self.expected)
         expected['paused'] = True
@@ -298,6 +298,24 @@ class TestQueue(TestQless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('queues', 0, 'queue'), expected)
         self.assertEqual(self.lua('queues', 0), [expected])
+
+    def test_pause_still_works(self):
+        '''Deprecated pause API still works'''
+        jids = map(str, range(10))
+        for jid in jids:
+            self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
+        # After pausing, we can't get the jobs, and the state reflects it
+        self.lua('pause', 0, 'queue')
+        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 0)
+        expected = dict(self.expected)
+        expected['paused'] = True
+        expected['waiting'] = 10
+        self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
+        self.assertEqual(self.lua('queues.list', 0), [expected])
+
+        # Once unpaused, we should be able to pop jobs off
+        self.lua('unpause', 0, 'queue')
+        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 10)
 
 
 class TestPut(TestQless):

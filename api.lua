@@ -114,6 +114,10 @@ QlessAPI["queue.jobsByState"] = function(now, state, ...)
   return Qless.jobs(now, state, unpack(arg))
 end
 
+QlessAPI['queue.pause'] = function(now, ...)
+  return QlessQueue.pause(now, unpack(arg))
+end
+
 QlessAPI['queue.peek'] = function(now, queue, offset, count)
   local jids = Qless.queue(queue):peek(now, offset, count)
   local response = {}
@@ -154,10 +158,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI['pause'] = function(now, ...)
-  return QlessQueue.pause(now, unpack(arg))
 end
 
 QlessAPI['unpause'] = function(now, ...)
@@ -320,6 +320,11 @@ end
 -- Deprecated. Use job.getMulti instead.
 QlessAPI['multiget'] = function(now, ...)
   return QlessAPI['job.getMulti'](now, unpack(arg))
+end
+
+-- Deprecated. Use queue.pause instead.
+QlessAPI['pause'] = function(now, ...)
+  return QlessAPI['queue.pause'](now, unpack(arg))
 end
 
 -- Deprecated. Use queue.peek instead.
