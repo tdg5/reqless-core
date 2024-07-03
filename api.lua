@@ -114,6 +114,10 @@ QlessAPI["queue.jobsByState"] = function(now, state, ...)
   return Qless.jobs(now, state, unpack(arg))
 end
 
+QlessAPI['queue.length'] = function(now, queue)
+  return Qless.queue(queue):length()
+end
+
 QlessAPI['queue.pause'] = function(now, ...)
   return QlessQueue.pause(now, unpack(arg))
 end
@@ -201,10 +205,6 @@ end
 
 QlessAPI['recur.untag'] = function(now, jid, ...)
   return Qless.recurring(jid):untag(unpack(arg))
-end
-
-QlessAPI['length'] = function(now, queue)
-  return Qless.queue(queue):length()
 end
 
 QlessAPI['worker.deregister'] = function(now, ...)
@@ -310,6 +310,11 @@ QlessAPI['jobs'] = function(now, state, ...)
     return QlessAPI['jobs.completed'](now, unpack(arg))
   end
   return QlessAPI['queue.jobsByState'](now, state, unpack(arg))
+end
+
+-- Deprecated. Use queue.length instead.
+QlessAPI['length'] = function(now, queue)
+  return QlessAPI['queue.length'](now, queue)
 end
 
 -- Deprecated. Use job.log instead.
