@@ -139,11 +139,31 @@ class TestWorker(TestQless):
         for jid in list(range(10)):
             self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         # And pop them from 10 different workers
-        workers = map(str, range(10))
+        workers = list(map(str, range(10)))
+        for worker in workers:
+            self.lua('queue.pop', 1, 'queue', worker, 1)
+        # And we'll unregister them each one at a time and ensure they are
+        # indeed removed from our list
+        for worker in workers:
+            found = [w['name'] for w in self.lua('workers.list', 2)]
+            self.assertTrue(worker in found)
+            self.lua('worker.unregister', 2, worker)
+            found = [w['name'] for w in self.lua('workers.list', 2)]
+            self.assertFalse(worker in found)
+
+    def test_worker_deregister_still_works(self):
+        '''Deprecated worker.deregister API still works'''
+        count = 10
+        for jid in list(range(count)):
+            result_jid = self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
+            self.assertEqual(jid, result_jid)
+        # And pop them from 10 different workers
+        workers = list(map(str, range(count)))
         for worker in workers:
             self.lua('queue.pop', 1, 'queue', worker, 1)
         # And we'll deregister them each one at a time and ensure they are
         # indeed removed from our list
+        self.assertEqual(count, len(list(workers)))
         for worker in workers:
             found = [w['name'] for w in self.lua('workers.list', 2)]
             self.assertTrue(worker in found)
