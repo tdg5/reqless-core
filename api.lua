@@ -169,6 +169,10 @@ QlessAPI['queue.throttle.set'] = function(now, queue, max)
   Qless.throttle(QlessQueue.ns .. queue):set({maximum = max}, 0)
 end
 
+QlessAPI['queue.unfail'] = function(now, queue, group, count)
+  return Qless.queue(queue):unfail(now, group, count)
+end
+
 QlessAPI['queue.unpause'] = function(now, ...)
   return QlessQueue.unpause(unpack(arg))
 end
@@ -228,10 +232,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI['unfail'] = function(now, queue, group, count)
-  return Qless.queue(queue):unfail(now, group, count)
 end
 
 -- Recurring job stuff
@@ -389,6 +389,11 @@ QlessAPI['track'] = function(now, command, jid)
   end
 
   return QlessAPI['jobs.tracked'](now)
+end
+
+-- Deprecated. Use queue.unfail instead.
+QlessAPI['unfail'] = function(now, queue, group, count)
+  return QlessAPI['queue.unfail'](now, queue, group, count)
 end
 
 -- Deprecated. Use queue.unpause instead.

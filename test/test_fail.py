@@ -211,6 +211,18 @@ class TestUnfailed(TestQless):
             self.lua('queue.pop', 0, 'queue', 'worker', 10)
             self.lua('job.fail', 0, jid, 'worker', 'group', 'message')
             self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
+        self.lua('queue.unfail', 0, 'queue', 'group', 100)
+        for jid in jids:
+            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'waiting')
+
+    def test_unfail_still_works(self):
+        '''Deprecated unfail API still works'''
+        jids = map(str, range(10))
+        for jid in jids:
+            self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
+            self.lua('queue.pop', 0, 'queue', 'worker', 10)
+            self.lua('job.fail', 0, jid, 'worker', 'group', 'message')
+            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
         self.lua('unfail', 0, 'queue', 'group', 100)
         for jid in jids:
             self.assertEqual(self.lua('job.get', 0, jid)['state'], 'waiting')
