@@ -86,6 +86,10 @@ QlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
   return Qless.job(jid):retry(now, queue, worker, delay, group, message)
 end
 
+QlessAPI['job.tag'] = function(now, jid, ...)
+  return cjson.encode(Qless.tag(now, 'add', jid, unpack(arg)))
+end
+
 QlessAPI['job.timeout'] = function(now, ...)
   for _, jid in ipairs(arg) do
     Qless.job(jid):timeout(now)
@@ -94,6 +98,10 @@ end
 
 QlessAPI['job.track'] = function(now, jid)
   return cjson.encode(Qless.track(now, 'track', jid))
+end
+
+QlessAPI['job.untag'] = function(now, jid, ...)
+  return cjson.encode(Qless.tag(now, 'remove', jid, unpack(arg)))
 end
 
 QlessAPI['job.untrack'] = function(now, jid)
@@ -106,6 +114,10 @@ end
 
 QlessAPI['jobs.failed'] = function(now, group, start, limit)
   return cjson.encode(Qless.failed(group, start, limit))
+end
+
+QlessAPI['jobs.tagged'] = function(now, tag, ...)
+  return cjson.encode(Qless.tag(now, 'get', tag, unpack(arg)))
 end
 
 QlessAPI['jobs.tracked'] = function(now)
@@ -181,6 +193,10 @@ QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
 
+QlessAPI['tags.top'] = function(now, ...)
+  return cjson.encode(Qless.tag(now, 'top', unpack(arg)))
+end
+
 QlessAPI['throttle.delete'] = function(now, tid)
   return Qless.throttle(tid):unset()
 end
@@ -228,10 +244,6 @@ end
 
 QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
-end
-
-QlessAPI['tag'] = function(now, command, ...)
-  return cjson.encode(Qless.tag(now, command, unpack(arg)))
 end
 
 -- Recurring job stuff
@@ -371,6 +383,23 @@ end
 -- Deprecated. Use queue.stats instead.
 QlessAPI['stats'] = function(now, queue, date)
   return QlessAPI['queue.stats'](now, queue, date)
+end
+
+-- Deprecated. Use job.tag, job.untag, jobs.tagged, or tags.top instead.
+QlessAPI['tag'] = function(now, command, ...)
+  if command == 'add' then
+    return QlessAPI['job.tag'](now, unpack(arg))
+  end
+  if command == 'remove' then
+    return QlessAPI['job.untag'](now, unpack(arg))
+  end
+  if command == 'get' then
+    return QlessAPI['jobs.tagged'](now, unpack(arg))
+  end
+  if command == 'top' then
+    return QlessAPI['tags.top'](now, unpack(arg))
+  end
+  error('Tag(): Unknown command ' .. command)
 end
 
 -- Deprecated. Use job.timeout instead.
