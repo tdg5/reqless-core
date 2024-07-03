@@ -25,7 +25,7 @@ class TestStats(TestQless):
         for jid in jids:
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
         for jid in jids:
-            self.lua('pop', jid, 'queue', 'worker', 1)
+            self.lua('queue.pop', jid, 'queue', 'worker', 1)
 
         stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['wait']['count'], 20)
@@ -41,7 +41,7 @@ class TestStats(TestQless):
         jids = list(map(str, range(20)))
         for jid in jids:
             self.lua('put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
-            self.lua('pop', 0, 'queue', 'worker', 1)
+            self.lua('queue.pop', 0, 'queue', 'worker', 1)
         for jid in jids:
             self.lua('job.complete', jid, jid, 'worker', 'queue', {})
 
@@ -58,7 +58,7 @@ class TestStats(TestQless):
         # is the number of jobs that are currently failed, as opposed to the
         # number of times a job has failed in that queue
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         stats = self.lua('queue.stats', 0, 'queue', 0)
         self.assertEqual(stats['failed'], 1)
@@ -74,7 +74,7 @@ class TestStats(TestQless):
     def test_failed_cancel(self):
         '''If we fail a job, and then cancel it, stats reflects 0 failed job'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 0, 'jid')
         stats = self.lua('queue.stats', 0, 'queue', 0)
@@ -85,15 +85,15 @@ class TestStats(TestQless):
         '''It correctly tracks retries in a queue'''
         self.lua('config.set', 0, 'heartbeat', '-10')
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['retries'], 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['retries'], 1)
 
     def test_original_day(self):
         '''It updates stats for the original day of stats'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         # Put it somehwere 1.5 days later
         self.lua('put', 129600, 'worker', 'queue', 'jid', 'klass', {}, 0)
@@ -103,7 +103,7 @@ class TestStats(TestQless):
     def test_failed_retries(self):
         '''It updates stats for jobs failed from retries'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
-        self.lua('pop', 1, 'queue', 'worker', 10)
+        self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.lua('job.retry', 3, 'jid', 'queue', 'worker')
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 1)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failures'], 1)
@@ -114,15 +114,15 @@ class TestStats(TestQless):
         self.lua('config.set', 0, 'heartbeat', -10)
         self.lua('config.set', 0, 'grace-period', 0)
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
-        self.lua('pop', 1, 'queue', 'worker', 10)
-        self.lua('pop', 2, 'queue', 'worker', 10)
+        self.lua('queue.pop', 1, 'queue', 'worker', 10)
+        self.lua('queue.pop', 2, 'queue', 'worker', 10)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 1)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failures'], 1)
 
     def test_stats_still_works(self):
         '''Deprecated stats API still works'''
         self.lua('put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('pop', 0, 'queue', 'worker', 1)
+        self.lua('queue.pop', 0, 'queue', 'worker', 1)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
         self.lua('cancel', 0, 'jid')
         stats = self.lua('stats', 0, 'queue', 0)

@@ -119,6 +119,15 @@ QlessAPI['queue.peek'] = function(now, queue, offset, count)
   return cjson.encode(response)
 end
 
+QlessAPI['queue.pop'] = function(now, queue, worker, count)
+  local jids = Qless.queue(queue):pop(now, worker, count)
+  local response = {}
+  for _, jid in ipairs(jids) do
+    table.insert(response, Qless.job(jid):data())
+  end
+  return cjson.encode(response)
+end
+
 QlessAPI['queue.stats'] = function(now, queue, date)
   return cjson.encode(Qless.queue(queue):stats(now, date))
 end
@@ -137,15 +146,6 @@ end
 
 QlessAPI['tag'] = function(now, command, ...)
   return cjson.encode(Qless.tag(now, command, unpack(arg)))
-end
-
-QlessAPI['pop'] = function(now, queue, worker, count)
-  local jids = Qless.queue(queue):pop(now, worker, count)
-  local response = {}
-  for _, jid in ipairs(jids) do
-    table.insert(response, Qless.job(jid):data())
-  end
-  return cjson.encode(response)
 end
 
 QlessAPI['pause'] = function(now, ...)
@@ -320,6 +320,11 @@ end
 -- Deprecated. Use queue.peek instead.
 QlessAPI['peek'] = function(now, queue, offset, count)
   return QlessAPI['queue.peek'](now, queue, offset, count)
+end
+
+-- Deprecated. Use queue.pop instead.
+QlessAPI['pop'] = function(now, queue, worker, count)
+  return QlessAPI['queue.pop'](now, queue, worker, count)
 end
 
 -- Deprecated. Use job.priority instead.
