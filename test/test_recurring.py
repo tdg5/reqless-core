@@ -228,6 +228,13 @@ class TestRecurring(TestQless):
         '''Stop a recurring job'''
         self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
+        self.lua('recurringJob.unrecur', 0, 'jid')
+        self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
+
+    def test_unrecur_still_works(self):
+        '''Deprecated unrecur API still works'''
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
         self.lua('unrecur', 0, 'jid')
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
 

@@ -197,6 +197,10 @@ QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
 
+QlessAPI['recurringJob.unrecur'] = function(now, jid)
+  return Qless.recurring(jid):unrecur()
+end
+
 QlessAPI['tags.top'] = function(now, ...)
   return cjson.encode(Qless.tag(now, 'top', unpack(arg)))
 end
@@ -248,10 +252,6 @@ end
 
 QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
-end
-
-QlessAPI['unrecur'] = function(now, jid)
-  return Qless.recurring(jid):unrecur()
 end
 
 QlessAPI['recur.get'] = function(now, jid)
@@ -432,6 +432,11 @@ end
 -- Deprecated. Use queue.unpause instead.
 QlessAPI['unpause'] = function(now, ...)
   return QlessAPI['queue.unpause'](now, unpack(arg))
+end
+
+-- Deprecated. Use recurringJob.unrecur instead.
+QlessAPI['unrecur'] = function(now, jid)
+  return QlessAPI['recurringJob.unrecur'](now, jid)
 end
 
 -- Deprecated. Use worker.unregister instead.
