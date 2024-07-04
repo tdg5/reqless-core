@@ -280,7 +280,7 @@ class TestQueue(TestQless):
         expected['name'] = 'another'
         expected['recurring'] = 1
         self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
-        self.lua('recur.update', 0, 'jid', 'queue', 'another')
+        self.lua('recurringJob.update', 0, 'jid', 'queue', 'another')
         self.assertEqual(self.lua('queues.list', 0), [expected, self.expected])
 
     def test_scheduled_waiting(self):
