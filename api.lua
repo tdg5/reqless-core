@@ -197,6 +197,13 @@ QlessAPI['queues.list'] = function(now)
   return cjson.encode(QlessQueue.counts(now, nil))
 end
 
+QlessAPI['recurringJob.get'] = function(now, jid)
+  local data = Qless.recurring(jid):data()
+  if data then
+    return cjson.encode(data)
+  end
+end
+
 QlessAPI['recurringJob.unrecur'] = function(now, jid)
   return Qless.recurring(jid):unrecur()
 end
@@ -252,14 +259,6 @@ end
 
 QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
-end
-
-QlessAPI['recur.get'] = function(now, jid)
-  local data = Qless.recurring(jid):data()
-  if not data then
-    return nil
-  end
-  return cjson.encode(data)
 end
 
 QlessAPI['recur.update'] = function(now, jid, ...)
@@ -372,6 +371,11 @@ end
 -- Deprecated. Use queue.recur instead.
 QlessAPI['recur'] = function(now, queue, jid, klass, data, spec, ...)
   return QlessAPI['queue.recur'](now, queue, jid, klass, data, spec, unpack(arg))
+end
+
+-- Deprecated. Use recurringJob.get instead.
+QlessAPI['recur.get'] = function(now, jid)
+  return QlessAPI['recurringJob.get'](now, jid)
 end
 
 -- Deprecated. Use job.requeue instead.

@@ -143,6 +143,24 @@ class TestRecurring(TestQless):
     def test_get(self):
         '''We should be able to get recurring jobs'''
         self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.assertEqual(self.lua('recurringJob.get', 0, 'jid'), {
+            'backlog': 0,
+            'count': 0,
+            'data': '{}',
+            'interval': 60,
+            'jid': 'jid',
+            'klass': 'klass',
+            'priority': 0,
+            'queue': 'queue',
+            'retries': 0,
+            'state': 'recur',
+            'tags': {},
+            'throttles': ['ql:q:queue'],
+        })
+
+    def test_recur_dot_get_still_works(self):
+        '''Deprecated recur.get API still works'''
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.assertEqual(self.lua('recur.get', 0, 'jid'), {
             'backlog': 0,
             'count': 0,
