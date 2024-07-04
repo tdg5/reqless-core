@@ -1,9 +1,9 @@
 '''Test job-centric operations'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
-class TestJob(TestQless):
+class TestJob(TestReqless):
     '''Some general jobby things'''
     def test_malformed(self):
         '''Enumerate all malformed input to job.priority'''
@@ -57,7 +57,7 @@ class TestJob(TestQless):
         self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
             self.lua, 'heartbeat', 4, 'jid', 'worker', {})
 
-class TestRequeue(TestQless):
+class TestRequeue(TestReqless):
     def test_requeue_existing_job(self):
         '''Requeueing an existing job is identical to `put`'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
@@ -102,7 +102,7 @@ class TestRequeue(TestQless):
         self.lua('requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('job.get', 0, 'jid')['queue'], 'queue-2')
 
-class TestComplete(TestQless):
+class TestComplete(TestReqless):
     '''Test how we complete jobs'''
     def test_malformed(self):
         '''Enumerate all the way they can be malformed'''
@@ -286,7 +286,7 @@ class TestComplete(TestQless):
         # Ensure that it shows up everywhere it should
         self.assertEqual(self.lua('job.get', 3, 'jid')['state'], 'complete')
 
-class TestTimeout(TestQless):
+class TestTimeout(TestReqless):
     '''Basic timeout works'''
     def test_timeout_running(self):
         '''You can timeout running jobs'''
@@ -303,7 +303,7 @@ class TestTimeout(TestQless):
         self.lua('timeout', 0, 'jid')
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'stalled')
 
-class TestCancel(TestQless):
+class TestCancel(TestReqless):
     '''Canceling jobs'''
     def test_cancel_waiting(self):
         '''You can cancel waiting jobs'''
@@ -379,7 +379,7 @@ class TestCancel(TestQless):
         self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
 
-class TestThrottles(TestQless):
+class TestThrottles(TestReqless):
   '''Acquiring and releasing throttles'''
   def test_acquire_throttles_acquires_all_throttles(self):
     '''Can acquire locks for all throttles'''

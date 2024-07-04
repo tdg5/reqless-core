@@ -1,10 +1,10 @@
 '''Tests about locks'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
 
-class TestLocks(TestQless):
+class TestLocks(TestReqless):
     '''Locks tests'''
     def test_malformed(self):
         '''Enumerate malformed inputs into heartbeat'''
@@ -15,7 +15,7 @@ class TestLocks(TestQless):
         ])
 
     def setUp(self):
-        TestQless.setUp(self)
+        TestReqless.setUp(self)
         # No grace period for any of these tests
         self.lua('config.set', 0, 'grace-period', 0)
 
@@ -132,10 +132,10 @@ class TestLocks(TestQless):
         self.lua('job.heartbeat', 2, 'jid', 'worker', {})
 
 
-class TestRetries(TestQless):
+class TestRetries(TestReqless):
     '''Test all the behavior surrounding retries'''
     def setUp(self):
-        TestQless.setUp(self)
+        TestReqless.setUp(self)
         # No grace periods for this
         self.lua('config.set', 0, 'grace-period', 0)
         self.lua('config.set', 0, 'heartbeat', -10)
@@ -178,7 +178,7 @@ class TestRetries(TestQless):
             'queue.pop', 0, 'queue', 'worker', 10)[0]['remaining'], 5)
 
 
-class TestRetry(TestQless):
+class TestRetry(TestReqless):
     '''Test all the behavior surrounding retry'''
     maxDiff = 100000
     def test_malformed(self):
@@ -360,13 +360,13 @@ class TestRetry(TestQless):
             'spawned_from_jid': False})
 
 
-class TestGracePeriod(TestQless):
+class TestGracePeriod(TestReqless):
     '''Make sure the grace period is honored'''
     # Our grace period for the tests
     grace = 10
 
     def setUp(self):
-        TestQless.setUp(self)
+        TestReqless.setUp(self)
         # Ensure whe know what the grace period is
         self.lua('config.set', 0, 'grace-period', self.grace)
 

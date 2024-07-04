@@ -1,8 +1,8 @@
 '''Test the queue functionality'''
 
-from common import TestQless
+from common import TestReqless
 
-class TestJobs(TestQless):
+class TestJobs(TestReqless):
     '''We should be able to list jobs in various states for a given queue'''
     def test_malformed(self):
         '''Enumerate all the ways that the input can be malformed'''
@@ -154,7 +154,7 @@ class TestJobs(TestQless):
             list(map(int, jids[50:])))
 
 
-class TestQueue(TestQless):
+class TestQueue(TestReqless):
     '''Test queue info tests'''
     expected = {
         'name': 'queue',
@@ -169,7 +169,7 @@ class TestQueue(TestQless):
     }
 
     def setUp(self):
-        TestQless.setUp(self)
+        TestReqless.setUp(self)
         # No grace period
         self.lua('config.set', 0, 'grace-period', 0)
 
@@ -318,7 +318,7 @@ class TestQueue(TestQless):
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 10)
 
 
-class TestPut(TestQless):
+class TestPut(TestReqless):
     '''Test putting jobs into a queue'''
     # For reference:
     #
@@ -493,11 +493,11 @@ class TestPut(TestQless):
         self.assertEqual(self.lua('job.get', 0, 'c')['dependencies'], ['b'])
 
 
-class TestPeek(TestQless):
+class TestPeek(TestReqless):
     '''Test peeking jobs'''
     # For reference:
     #
-    #   QlessAPI.peek = function(now, queue, count)
+    #   ReqlessAPI.peek = function(now, queue, count)
     def test_malformed(self):
         '''Enumerate all the ways in which the input can be malformed'''
         self.assertMalformed(self.lua, [
@@ -666,11 +666,11 @@ class TestPeek(TestQless):
             'jid', 'jid2'])
 
 
-class TestPop(TestQless):
+class TestPop(TestReqless):
     '''Test popping jobs'''
     # For reference:
     #
-    #   QlessAPI.pop = function(now, queue, worker, count)
+    #   ReqlessAPI.pop = function(now, queue, worker, count)
     def test_malformed(self):
         '''Enumerate all the ways this can be malformed'''
         self.assertMalformed(self.lua, [

@@ -1,10 +1,10 @@
 '''Tests about failing jobs'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
 
-class TestFail(TestQless):
+class TestFail(TestReqless):
     '''Test the behavior of failing jobs'''
     def test_malformed(self):
         '''Enumerate all the malformed cases'''
@@ -137,7 +137,7 @@ class TestFail(TestQless):
             self.lua, 'job.fail', 4, 'jid', 'worker', 'group', 'message', {})
 
 
-class TestFailed(TestQless):
+class TestFailed(TestReqless):
     '''Test access to our failed jobs'''
     def test_malformed(self):
         '''Enumerate all the malformed requests'''
@@ -201,7 +201,7 @@ class TestFailed(TestQless):
         })
 
 
-class TestUnfailed(TestQless):
+class TestUnfailed(TestReqless):
     '''Test access to unfailed'''
     def test_basic(self):
         '''We can unfail in a basic way'''

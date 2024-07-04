@@ -1,9 +1,9 @@
 '''Tests for recurring jobs'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestRecurring(TestQless):
+class TestRecurring(TestReqless):
     '''Tests for recurring jobs'''
     def test_malformed(self):
         '''Enumerate all the malformed possibilities'''

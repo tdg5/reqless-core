@@ -1,10 +1,10 @@
 '''Test out dependency-related code'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
 
-class TestDependencies(TestQless):
+class TestDependencies(TestReqless):
     '''Dependency-related tests'''
     def test_unlock(self):
         '''Dependencies unlock their dependents upon completion'''

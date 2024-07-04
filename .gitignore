@@ -1,4 +1,4 @@
-qless.lua
-qless-lib.lua
+reqless.lua
+reqless-lib.lua
 *.pyc
 venv

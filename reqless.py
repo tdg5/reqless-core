@@ -1,5 +1,5 @@
 '''Some helper functions for running tests. This should not be confused with
-the python qless bindings.'''
+the python reqless bindings.'''
 
 import hashlib
 import os
@@ -26,15 +26,15 @@ class FauxScript:
         args = tuple(keys) + tuple(args)
         return client.evalsha(self.sha, len(keys), *args)
 
-class QlessRecorder(object):
+class ReqlessRecorder(object):
     '''A context-manager to capture anything that goes back and forth'''
-    __name__ = 'QlessRecorder'
+    __name__ = 'ReqlessRecorder'
 
     def __init__(self, client):
         self._client = client
         self._pubsub = self._client.pubsub()
         script_already_registered = os.environ.get('SCRIPT_ALREADY_REGISTERED')
-        with open('qless.lua') as fin:
+        with open('reqless.lua') as fin:
             if script_already_registered != None:
                 encoder = client.connection_pool.get_encoder()
                 script = encoder.encode(fin.read())

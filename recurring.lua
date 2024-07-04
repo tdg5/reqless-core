@@ -1,5 +1,5 @@
 -- Get all the attributes of this particular job
-function QlessRecurringJob:data()
+function ReqlessRecurringJob:data()
   local job = redis.call(
     'hmget', 'ql:r:' .. self.jid, 'jid', 'klass', 'state', 'queue',
     'priority', 'interval', 'retries', 'count', 'data', 'tags', 'backlog', 'throttles')
@@ -32,7 +32,7 @@ end
 --      - klass
 --      - queue
 --      - backlog
-function QlessRecurringJob:update(now, ...)
+function ReqlessRecurringJob:update(now, ...)
   local options = {}
   -- Make sure that the job exists
   if redis.call('exists', 'ql:r:' .. self.jid) ~= 0 then
@@ -46,7 +46,7 @@ function QlessRecurringJob:update(now, ...)
         -- time when it should next be scheduled
         if key == 'interval' then
           local queue, interval = unpack(redis.call('hmget', 'ql:r:' .. self.jid, 'queue', 'interval'))
-          Qless.queue(queue).recurring.update(
+          Reqless.queue(queue).recurring.update(
             value - tonumber(interval), self.jid)
         end
         redis.call('hset', 'ql:r:' .. self.jid, key, value)
@@ -57,24 +57,24 @@ function QlessRecurringJob:update(now, ...)
         redis.call('hset', 'ql:r:' .. self.jid, 'klass', value)
       elseif key == 'queue' then
         local old_queue_name = redis.call('hget', 'ql:r:' .. self.jid, 'queue')
-        local queue_obj = Qless.queue(old_queue_name)
+        local queue_obj = Reqless.queue(old_queue_name)
         local score = queue_obj.recurring.score(self.jid)
 
         -- Detach from the old queue
         queue_obj.recurring.remove(self.jid)
         local throttles = cjson.decode(redis.call('hget', 'ql:r:' .. self.jid, 'throttles') or '{}')
         for index, throttle_name in ipairs(throttles) do
-          if throttle_name == QlessQueue.ns .. old_queue_name then
+          if throttle_name == ReqlessQueue.ns .. old_queue_name then
             table.remove(throttles, index)
           end
         end
 
 
         -- Attach to the new queue
-        table.insert(throttles, QlessQueue.ns .. value)
+        table.insert(throttles, ReqlessQueue.ns .. value)
         redis.call('hset', 'ql:r:' .. self.jid, 'throttles', cjson.encode(throttles))
 
-        Qless.queue(value).recurring.add(score, self.jid)
+        Reqless.queue(value).recurring.add(score, self.jid)
         redis.call('hset', 'ql:r:' .. self.jid, 'queue', value)
         -- If we don't already know about the queue, learn about it
         if redis.call('zscore', 'ql:queues', value) == false then
@@ -98,7 +98,7 @@ function QlessRecurringJob:update(now, ...)
 end
 
 -- Tags this recurring job with the provided tags
-function QlessRecurringJob:tag(...)
+function ReqlessRecurringJob:tag(...)
   local tags = redis.call('hget', 'ql:r:' .. self.jid, 'tags')
   -- If the job has been canceled / deleted, then return false
   if tags then
@@ -119,7 +119,7 @@ function QlessRecurringJob:tag(...)
 end
 
 -- Removes a tag from the recurring job
-function QlessRecurringJob:untag(...)
+function ReqlessRecurringJob:untag(...)
   -- Get the existing tags
   local tags = redis.call('hget', 'ql:r:' .. self.jid, 'tags')
   -- If the job has been canceled / deleted, then return false
@@ -144,13 +144,13 @@ function QlessRecurringJob:untag(...)
 end
 
 -- Stop further occurrences of this job
-function QlessRecurringJob:unrecur()
+function ReqlessRecurringJob:unrecur()
   -- First, find out what queue it was attached to
   local queue = redis.call('hget', 'ql:r:' .. self.jid, 'queue')
   if queue then
     -- Now, delete it from the queue it was attached to, and delete the
     -- thing itself
-    Qless.queue(queue).recurring.remove(self.jid)
+    Reqless.queue(queue).recurring.remove(self.jid)
     redis.call('del', 'ql:r:' .. self.jid)
     return true
   end

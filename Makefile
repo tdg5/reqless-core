@@ -1,21 +1,21 @@
-all: qless.lua qless-lib.lua
+all: reqless.lua reqless-lib.lua
 
-qless-lib.lua: base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua
-	echo "-- Current SHA: `git rev-parse HEAD`" > qless-lib.lua
-	echo "-- This is a generated file" >> qless-lib.lua
-	cat base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua >> qless-lib.lua
+reqless-lib.lua: base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua
+	echo "-- Current SHA: `git rev-parse HEAD`" > reqless-lib.lua
+	echo "-- This is a generated file" >> reqless-lib.lua
+	cat base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua >> reqless-lib.lua
 
-qless.lua: qless-lib.lua api.lua
+reqless.lua: reqless-lib.lua api.lua
 	# Cat these files out, but remove all the comments from the source
-	echo "-- Current SHA: `git rev-parse HEAD`" > qless.lua
-	echo "-- This is a generated file" >> qless.lua
-	cat qless-lib.lua api.lua | \
+	echo "-- Current SHA: `git rev-parse HEAD`" > reqless.lua
+	echo "-- This is a generated file" >> reqless.lua
+	cat reqless-lib.lua api.lua | \
 		egrep -v '^[[:space:]]*--[^\[]' | \
-		egrep -v '^--$$' >> qless.lua
+		egrep -v '^--$$' >> reqless.lua
 
 clean:
-	rm -f qless.lua qless-lib.lua
+	rm -f reqless.lua reqless-lib.lua
 
 .PHONY: test
-test: qless.lua *.lua
+test: reqless.lua *.lua
 	nosetests --exe -v $(TEST)

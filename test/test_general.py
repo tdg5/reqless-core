@@ -1,10 +1,10 @@
 '''Check some general functionality surrounding the the API'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
 
-class TestGeneral(TestQless):
+class TestGeneral(TestReqless):
     '''Some general tests'''
     def test_keys(self):
         '''No keys may be provided to the script'''

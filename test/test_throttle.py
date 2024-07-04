@@ -3,9 +3,10 @@
 import redis
 import code
 
-from common import TestQless
+from common import TestReqless
 
-class TestThrottle(TestQless):
+
+class TestThrottle(TestReqless):
   '''Test setting throttle data'''
   def test_set(self):
     self.lua('throttle.set', 0, 'tid', 5, 0)
@@ -79,7 +80,8 @@ class TestThrottle(TestQless):
     self.assertEqual(self.lua('queue.jobsByState', 13, 'throttled', 'queue'), [])
     self.assertEqual(self.lua('queue.jobsByState', 14, 'running', 'queue'), [])
 
-class TestAcquire(TestQless):
+
+class TestAcquire(TestReqless):
   '''Test that a job has a default queue throttle'''
   def test_default_queue_throttle(self):
     self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
@@ -107,7 +109,8 @@ class TestAcquire(TestQless):
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [b'jid1'])
     self.assertEqual(self.lua('throttle.pending', 0, 'tid'), [b'jid2', b'jid3', b'jid4'])
 
-class TestRelease(TestQless):
+
+class TestRelease(TestReqless):
   '''Test that when there are no pending jobs lock is properly released'''
   def test_no_pending_jobs(self):
     self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'throttles', ['tid'])
@@ -257,7 +260,8 @@ class TestRelease(TestQless):
     self.assertEqual(self.lua('throttle.pending', 8, 'tid'), [])
     self.assertEqual(self.lua('queue.jobsByState', 9, 'throttled', 'queue'), [])
 
-class TestDependents(TestQless):
+
+class TestDependents(TestReqless):
   def test_dependencies_can_acquire_lock_after_dependent_success(self):
     self.lua('throttle.set', 0, 'tid', 1)
     self.lua('queue.put', 1, 'worker', 'queue', 'jid1', 'klass', {}, 0, 'throttles', ['tid'])
@@ -324,7 +328,8 @@ class TestDependents(TestQless):
     self.assertEqual(self.lua('throttle.locks', 0, 'tid'), [])
     self.assertEqual(self.lua('queue.jobsByState', 0, 'throttled', 'queue'), [])
 
-class TestConcurrencyLevelChange(TestQless):
+
+class TestConcurrencyLevelChange(TestReqless):
   '''Test that changes to concurrency level are handled dynamically'''
   def test_increasing_concurrency_level_activates_pending_jobs(self):
     '''Activates pending jobs when concurrency level of throttle is increased'''

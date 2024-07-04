@@ -1,9 +1,9 @@
 '''A large number of operations generate events. Let's test'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestEvents(TestQless):
+class TestEvents(TestReqless):
     '''Check for all the events we expect'''
     def test_track(self):
         '''We should hear chatter about tracking and untracking jobs'''

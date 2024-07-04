@@ -1,13 +1,13 @@
 '''Test our tagging functionality'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestTag(TestQless):
+class TestTag(TestReqless):
     '''Test our tagging functionality'''
     #
-    # QlessAPI.tag = function(now, command, ...)
-    #     return cjson.encode(Qless.tag(now, command, unpack(arg)))
+    # ReqlessAPI.tag = function(now, command, ...)
+    #     return cjson.encode(Reqless.tag(now, command, unpack(arg)))
     # end
     def test_malformed(self):
         '''Enumerate all the ways it could be malformed'''

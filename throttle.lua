@@ -1,5 +1,5 @@
 -- Retrieve the data for a throttled resource
-function QlessThrottle:data()
+function ReqlessThrottle:data()
   -- Default values for the data
   local data = {
     id = self.id,
@@ -7,7 +7,7 @@ function QlessThrottle:data()
   }
 
   -- Retrieve data stored in redis
-  local throttle = redis.call('hmget', QlessThrottle.ns .. self.id, 'id', 'maximum')
+  local throttle = redis.call('hmget', ReqlessThrottle.ns .. self.id, 'id', 'maximum')
 
   if throttle[2] then
     data.maximum = tonumber(throttle[2])
@@ -17,21 +17,21 @@ function QlessThrottle:data()
 end
 
 -- Set the data for a throttled resource
-function QlessThrottle:set(data, expiration)
-  redis.call('hmset', QlessThrottle.ns .. self.id, 'id', self.id, 'maximum', data.maximum)
+function ReqlessThrottle:set(data, expiration)
+  redis.call('hmset', ReqlessThrottle.ns .. self.id, 'id', self.id, 'maximum', data.maximum)
   if expiration > 0 then
-    redis.call('expire', QlessThrottle.ns .. self.id, expiration)
+    redis.call('expire', ReqlessThrottle.ns .. self.id, expiration)
   end
 end
 
 -- Delete a throttled resource
-function QlessThrottle:unset()
-  redis.call('del', QlessThrottle.ns .. self.id)
+function ReqlessThrottle:unset()
+  redis.call('del', ReqlessThrottle.ns .. self.id)
 end
 
 -- Acquire a throttled resource for a job.
 -- Returns true of the job acquired the resource, false otherwise
-function QlessThrottle:acquire(jid)
+function ReqlessThrottle:acquire(jid)
   if not self:available() then
     return false
   end
@@ -40,13 +40,13 @@ function QlessThrottle:acquire(jid)
   return true
 end
 
-function QlessThrottle:pend(now, jid)
+function ReqlessThrottle:pend(now, jid)
   self.pending.add(now, jid)
 end
 
 -- Releases the lock taken by the specified jid.
 -- number of jobs released back into the queues is determined by the locks_available method.
-function QlessThrottle:release(now, jid)
+function ReqlessThrottle:release(now, jid)
   -- Only attempt to remove from the pending set if the job wasn't found in the
   -- locks set
   if self.locks.remove(jid) == 0 then
@@ -61,9 +61,9 @@ function QlessThrottle:release(now, jid)
   -- subtract one to ensure we pop the correct amount. peek(0, 0) returns the first element
   -- peek(0,1) return the first two.
   for _, jid in ipairs(self.pending.peek(0, available_locks - 1)) do
-    local job = Qless.job(jid)
+    local job = Reqless.job(jid)
     local data = job:data()
-    local queue = Qless.queue(data['queue'])
+    local queue = Reqless.queue(data['queue'])
 
     queue.throttled.remove(jid)
     queue.work.add(now, data.priority, jid)
@@ -75,19 +75,19 @@ function QlessThrottle:release(now, jid)
 end
 
 -- Returns true if the throttle has locks available, false otherwise.
-function QlessThrottle:available()
+function ReqlessThrottle:available()
   return self.maximum == 0 or self.locks.length() < self.maximum
 end
 
 -- Returns the TTL of the throttle
-function QlessThrottle:ttl()
-  return redis.call('ttl', QlessThrottle.ns .. self.id)
+function ReqlessThrottle:ttl()
+  return redis.call('ttl', ReqlessThrottle.ns .. self.id)
 end
 
 -- Returns the number of locks available for the throttle.
 -- calculated by maximum - locks.length(), if the throttle is unlimited
 -- then up to 10 jobs are released.
-function QlessThrottle:locks_available()
+function ReqlessThrottle:locks_available()
   if self.maximum == 0 then
     -- Arbitrarily chosen value. might want to make it configurable in the future.
     return 10

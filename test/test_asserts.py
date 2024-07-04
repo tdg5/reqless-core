@@ -1,9 +1,9 @@
 '''Test our own built-in asserts'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestAsserts(TestQless):
+class TestAsserts(TestReqless):
     '''Ensure our own assert methods raise the exceptions they're supposed to'''
     def test_assertRaisesRegexp(self):
         '''Make sure that our home-brew assertRaisesRegexp works'''

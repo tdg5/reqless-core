@@ -1,14 +1,14 @@
 '''Tests for our configuration'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestConfig(TestQless):
+class TestConfig(TestReqless):
     '''Test our config scripts'''
     def test_all(self):
         '''Should be able to access all configurations'''
         self.assertEqual(self.lua('config.get', 0), {
-            'application': 'qless',
+            'application': 'reqless',
             'grace-period': 10,
             'heartbeat': 60,
             'histogram-history': 7,

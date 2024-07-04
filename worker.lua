@@ -1,5 +1,5 @@
 -- Deregisters these workers from the list of known workers
-function QlessWorker.deregister(...)
+function ReqlessWorker.deregister(...)
   redis.call('zrem', 'ql:workers', unpack(arg))
 end
 
@@ -31,11 +31,11 @@ end
 --      ]
 --  }
 --
-function QlessWorker.counts(now, worker)
+function ReqlessWorker.counts(now, worker)
   -- Clean up all the workers' job lists if they're too old. This is
   -- determined by the `max-worker-age` configuration, defaulting to the
   -- last day. Seems like a 'reasonable' default
-  local interval = tonumber(Qless.config.get('max-worker-age', 86400))
+  local interval = tonumber(Reqless.config.get('max-worker-age', 86400))
 
   local workers  = redis.call('zrangebyscore', 'ql:workers', 0, now - interval)
   for _, worker in ipairs(workers) do

@@ -3,17 +3,17 @@
 import os
 import re
 import redis
-import qless
+import reqless
 import unittest
 
 
-class TestQless(unittest.TestCase):
+class TestReqless(unittest.TestCase):
     '''Base class for all of our tests'''
     @classmethod
     def setUpClass(cls):
         url = os.environ.get('REDIS_URL', 'redis://localhost:6379/')
         cls.redis = redis.Redis.from_url(url)
-        cls.lua = qless.QlessRecorder(cls.redis)
+        cls.lua = reqless.ReqlessRecorder(cls.redis)
 
     def tearDown(self):
         self.lua.flush()

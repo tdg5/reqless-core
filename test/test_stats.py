@@ -1,9 +1,9 @@
 '''Test the stats we keep about queues'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestStats(TestQless):
+class TestStats(TestReqless):
     '''Tests the stats we keep about queues'''
     def test_malformed(self):
         '''Enumerate all the ways to send malformed requests'''

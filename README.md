@@ -1,22 +1,16 @@
-Qless Core
+Reqless Core
 ==========
-[![Build Status](https://travis-ci.org/seomoz/qless-core.png)](https://travis-ci.org/seomoz/qless-core)
 
-This is the set of all the lua scripts that comprise the qless library. We've
-begun migrating away from the system of having one lua script per command to
-a more object-oriented approach where all code is contained in a single unified
-lua script.
+This is the set of all the lua scripts that comprise the reqless library.
 
-There are a few reasons for making this choice, but essentially it was getting
-too difficult to maintain and there was a lot of duplicated code in different
-sections. This also happens to have the added benefit of allowing you to build
-on top of the qless core library __within your own lua scripts__ through
-composition.
+This was once a fork of
+[`backupify/qless-core`](https://github.com/backupify/qless-core), which itself
+is a fork of [`seomoz/qless-core`](https://github.com/seomoz/qless-core).
 
 Building
 --------
 For ease of development, we've broken this unified file into several smaller
-submodules that are concatenated together into a `qless.lua` script. These are:
+submodules that are concatenated together into a `reqless.lua` script. These are:
 
 - `base.lua` -- forward declarations and some uncategorized functions
 - `config.lua` -- all configuration interactions
@@ -26,27 +20,27 @@ submodules that are concatenated together into a `qless.lua` script. These are:
 - `api.lua` -- exposing the interfaces that the clients invoke, it's a very
 	thin wrapper around these classes
 
-In order to build up the `qless.lua` script, we've included a simple `Makefile`
+In order to build up the `reqless.lua` script, we've included a simple `Makefile`
 though all it does is cat these files out in a particular order:
 
 ```bash
-make qless.lua
+make reqless.lua
 ```
 
 If you'd like to use _just_ the core library within your lua script, you can
 get lua script that contains all the classes, but none of the wrapping layer
-that the qless clients use:
+that the reqless clients use:
 
 ```bash
-make qless-lib.lua
+make reqless-lib.lua
 ```
 
 Testing
 -------
 Historically, tests have appeared only in the language-specific bindings of
-qless, but that has become a tedious process. Not to mention the fact that
+reqless, but that has become a tedious process. Not to mention the fact that
 it's a steep barrier to entry for writing new clients. In light of that, we
-now include tests directly in `qless-core`, written in python. To run these,
+now include tests directly in `reqless-core`, written in python. To run these,
 you will need python and the `nose` and `redis` libraries. If you have `pip`
 installed:
 
@@ -82,15 +76,6 @@ REDIS_URL='redis://host:port' make test
 Conventions
 ===========
 
-No more `KEYS`
---------------
-When originally developing this, I wrote some functions using the `KEYS`
-portion of the lua scripts, but eventually realized that to do so didn't make
-any sense. For just about all operations there's no way to determine a priori
-which Redis keys would be touched, and so I abandoned that idea. However, in
-many cases there were vestigial `KEYS` in use, but that has now changed. No
-more `KEYS`!
-
 Time, Time Everywhere
 ---------------------
 To ease the client logic, every command now takes a timestamp with it. In many
@@ -124,7 +109,7 @@ and the updated expiration returned. If not, an exception is raised.
 
 Stats
 -----
-Qless also collects statistics for job wait time (time popped - time put),
+Reqless also collects statistics for job wait time (time popped - time put),
 and job completion time (time completed - time popped). By 'statistics',
 I mean average, variange, count and a histogram. Stats for the number of
 failures and retries for a given queue are also available.
@@ -183,7 +168,7 @@ key `ql:completed`
 Configuration Options
 =====================
 The configuration should go in the key `ql:config`, and here are some of the
-configuration options that `qless` is meant to support:
+configuration options that `reqless` is meant to support:
 
 1. `heartbeat` (60) --
 	The default heartbeat in seconds for queues
@@ -338,18 +323,18 @@ Implementing Clients
 ====================
 There are a few nuanced aspects of implementing bindings for your particular
 language that are worth bringing up. The canonical example for bindings should
-be the [python](https://github.com/seomoz/qless-py) and
-[ruby](https://github.com/seomoz/qless) bindings.
+be the [python](https://github.com/seomoz/reqless-py) and
+[ruby](https://github.com/seomoz/reqless) bindings.
 
 Structure
 ---------
 We recommend using
 [git submodules](http://git-scm.com/book/en/Git-Tools-Submodules) to keep
-[qless-core](https://github.com/seomoz/qless-core) in your bindings.
+[reqless-core](https://github.com/seomoz/reqless-core) in your bindings.
 
 Testing
 -------
-The majority of tests are implemented in `qless-core`, and so your bindings
+The majority of tests are implemented in `reqless-core`, and so your bindings
 should merely test that they provide sensible access to the functionality. This
 should include a notion of `queues`, `workers`, `jobs`, etc.
 
@@ -401,7 +386,7 @@ Each style of worker should be able to listen for worker-specific `lock_lost`,
 `canceled` and `put` events, each of which can signal that a worker has lost
 its right to process a job. If that's discovered, a parent process could take
 the opportunity to stop the child worker that's currently running that job (if
-it exists). While `qless` ensures correct behavior when taking action on jobs
+it exists). While `reqless` ensures correct behavior when taking action on jobs
 where a lock has been lost, this is an opportunity to gain efficiency.
 
 Queue Popping Order
@@ -415,7 +400,7 @@ should support two modes of popping: ordered and round-robin. Consider queues
 	B: 2
 	C: 3
 
-In an ordered verion, the order in which the queues are specified has
+In an ordered version, the order in which the queues are specified has
 significance in the order in which jobs are popped. For example, if our queued
 were ordered `C, B, A` in the worker, we'd pop jobs off:
 
@@ -442,6 +427,3 @@ the same variable names have the same meaning.
 	some time with a Thesaurus, I didn't find anything that appealed to me more
 1. Job types should be described as `klass` (nod to Resque), because both
 	'type' and 'class' are commonly used in languages.
-
-
-

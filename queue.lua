@@ -2,10 +2,10 @@
 -- Queue class
 -------------------------------------------------------------------------------
 -- Return a queue object
-function Qless.queue(name)
+function Reqless.queue(name)
   assert(name, 'Queue(): no queue name provided')
   local queue = {}
-  setmetatable(queue, QlessQueue)
+  setmetatable(queue, ReqlessQueue)
   queue.name = name
 
   -- Access to our work
@@ -135,12 +135,12 @@ function Qless.queue(name)
 end
 
 -- Return the prefix for this particular queue
-function QlessQueue:prefix(group)
+function ReqlessQueue:prefix(group)
   if group then
-    return QlessQueue.ns .. self.name .. '-' .. group
+    return ReqlessQueue.ns .. self.name .. '-' .. group
   end
 
-  return QlessQueue.ns .. self.name
+  return ReqlessQueue.ns .. self.name
 end
 
 -- Stats(now, date)
@@ -175,7 +175,7 @@ end
 -- for the first day, the hour resolution for the first 3 days, and then at
 -- the day resolution from there on out. The `histogram` key is a list of
 -- those values.
-function QlessQueue:stats(now, date)
+function ReqlessQueue:stats(now, date)
   date = assert(tonumber(date),
     'Stats(): Arg "date" missing or not a number: ' .. (date or 'nil'))
 
@@ -237,7 +237,7 @@ end
 -------
 -- Examine the next jobs that would be popped from the queue without actually
 -- popping them.
-function QlessQueue:peek(now, offset, count)
+function ReqlessQueue:peek(now, offset, count)
   offset = assert(tonumber(offset),
     'Peek(): Arg "offset" missing or not a number: ' .. tostring(offset))
 
@@ -287,29 +287,29 @@ function QlessQueue:peek(now, offset, count)
 end
 
 -- Return true if this queue is paused
-function QlessQueue:paused()
+function ReqlessQueue:paused()
   return redis.call('sismember', 'ql:paused_queues', self.name) == 1
 end
 
 -- Pause this queue
 --
 -- Note: long term, we have discussed adding a rate-limiting
--- feature to qless-core, which would be more flexible and
+-- feature to reqless-core, which would be more flexible and
 -- could be used for pausing (i.e. pause = set the rate to 0).
 -- For now, this is far simpler, but we should rewrite this
 -- in terms of the rate limiting feature if/when that is added.
-function QlessQueue.pause(now, ...)
+function ReqlessQueue.pause(now, ...)
   redis.call('sadd', 'ql:paused_queues', unpack(arg))
 end
 
 -- Unpause this queue
-function QlessQueue.unpause(...)
+function ReqlessQueue.unpause(...)
   redis.call('srem', 'ql:paused_queues', unpack(arg))
 end
 
 -- Checks for expired locks, scheduled and recurring jobs, returning any
 -- jobs that are ready to be processes
-function QlessQueue:pop(now, worker, count)
+function ReqlessQueue:pop(now, worker, count)
   assert(worker, 'Pop(): Arg "worker" missing')
   count = assert(tonumber(count),
     'Pop(): Arg "count" missing or not a number: ' .. tostring(count))
@@ -326,7 +326,7 @@ function QlessQueue:pop(now, worker, count)
   local popped = {}
 
   for _, jid in ipairs(dead_jids) do
-    local success = self:pop_job(now, worker, Qless.job(jid))
+    local success = self:pop_job(now, worker, Reqless.job(jid))
     -- only track jid if a job was popped and it's not a phantom jid
     if success then
       table.insert(popped, jid)
@@ -334,7 +334,7 @@ function QlessQueue:pop(now, worker, count)
   end
 
   -- if queue is at max capacity don't pop any further jobs.
-  if not Qless.throttle(QlessQueue.ns .. self.name):available() then
+  if not Reqless.throttle(ReqlessQueue.ns .. self.name):available() then
     return popped
   end
 
@@ -357,8 +357,8 @@ function QlessQueue:pop(now, worker, count)
   -- Since throttles could prevent work queue items from being popped, we can
   -- retry a number of times till we find work items that are not throttled
   local pop_retry_limit = tonumber(
-    Qless.config.get(self.name .. '-max-pop-retry') or
-    Qless.config.get('max-pop-retry', 1)
+    Reqless.config.get(self.name .. '-max-pop-retry') or
+    Reqless.config.get('max-pop-retry', 1)
   )
 
   -- Keep trying to fulfill fulfill jobs from the work queue until we reach
@@ -374,7 +374,7 @@ function QlessQueue:pop(now, worker, count)
 
 
     for _, jid in ipairs(jids) do
-      local job = Qless.job(jid)
+      local job = Reqless.job(jid)
       if job:throttles_acquire(now) then
         local success = self:pop_job(now, worker, job)
         -- only track jid if a job was popped and it's not a phantom jid
@@ -397,7 +397,7 @@ function QlessQueue:pop(now, worker, count)
 end
 
 -- Throttle a job
-function QlessQueue:throttle(now, job)
+function ReqlessQueue:throttle(now, job)
   job:throttle(now)
   self.throttled.add(now, job.jid)
   local state = unpack(job:data('state'))
@@ -407,7 +407,7 @@ function QlessQueue:throttle(now, job)
   end
 end
 
-function QlessQueue:pop_job(now, worker, job)
+function ReqlessQueue:pop_job(now, worker, job)
   local state
   local jid = job.jid
   local job_state = job:data('state')
@@ -421,15 +421,15 @@ function QlessQueue:pop_job(now, worker, job)
 
   -- We should find the heartbeat interval for this queue heartbeat
   local expires = now + tonumber(
-    Qless.config.get(self.name .. '-heartbeat') or
-    Qless.config.get('heartbeat', 60))
+    Reqless.config.get(self.name .. '-heartbeat') or
+    Reqless.config.get('heartbeat', 60))
 
   -- Update the wait time statistics
   -- Just does job:data('time') do the same as this?
-  local time = tonumber(redis.call('hget', QlessJob.ns .. jid, 'time') or now)
+  local time = tonumber(redis.call('hget', ReqlessJob.ns .. jid, 'time') or now)
   local waiting = now - time
   self:stat(now, 'wait', waiting)
-  redis.call('hset', QlessJob.ns .. jid,
+  redis.call('hset', ReqlessJob.ns .. jid,
     'time', string.format("%.20f", now))
 
   -- Add this job to the list of jobs handled by this worker
@@ -446,13 +446,13 @@ function QlessQueue:pop_job(now, worker, job)
 
   local tracked = redis.call('zscore', 'ql:tracked', jid) ~= false
   if tracked then
-    Qless.publish('popped', jid)
+    Reqless.publish('popped', jid)
   end
   return true
 end
 
 -- Update the stats for this queue
-function QlessQueue:stat(now, stat, val)
+function ReqlessQueue:stat(now, stat, val)
   -- The bin is midnight of the provided day
   local bin = now - (now % 86400)
   local key = 'ql:s:' .. stat .. ':' .. bin .. ':' .. self.name
@@ -500,7 +500,7 @@ end
 -- -----------------------
 -- Insert a job into the queue with the given priority, tags, delay, klass and
 -- data.
-function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
+function ReqlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   assert(jid  , 'Put(): Arg "jid" missing')
   assert(klass, 'Put(): Arg "klass" missing')
   local data = assert(cjson.decode(raw_data),
@@ -517,14 +517,14 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   for i = 1, #arg, 2 do options[arg[i]] = arg[i + 1] end
 
   -- Let's see what the old priority and tags were
-  local job = Qless.job(jid)
+  local job = Reqless.job(jid)
   local priority, tags, oldqueue, state, failure, retries, oldworker =
-    unpack(redis.call('hmget', QlessJob.ns .. jid, 'priority', 'tags',
+    unpack(redis.call('hmget', ReqlessJob.ns .. jid, 'priority', 'tags',
       'queue', 'state', 'failure', 'retries', 'worker'))
 
   -- If there are old tags, then we should remove the tags this job has
   if tags then
-    Qless.tag(now, 'remove', jid, unpack(cjson.decode(tags)))
+    Reqless.tag(now, 'remove', jid, unpack(cjson.decode(tags)))
   end
 
   -- Sanity check on optional args
@@ -549,18 +549,18 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
 
     -- Now find what's in the original, but not the new
     local original = redis.call(
-      'smembers', QlessJob.ns .. jid .. '-dependencies')
+      'smembers', ReqlessJob.ns .. jid .. '-dependencies')
     for _, dep in pairs(original) do
       if new[dep] == nil then
         -- Remove k as a dependency
-        redis.call('srem', QlessJob.ns .. dep .. '-dependents'  , jid)
-        redis.call('srem', QlessJob.ns .. jid .. '-dependencies', dep)
+        redis.call('srem', ReqlessJob.ns .. dep .. '-dependents'  , jid)
+        redis.call('srem', ReqlessJob.ns .. jid .. '-dependencies', dep)
       end
     end
   end
 
   -- Send out a log message
-  Qless.publish('log', cjson.encode({
+  Reqless.publish('log', cjson.encode({
     jid   = jid,
     event = 'put',
     queue = self.name
@@ -572,9 +572,9 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   -- If this item was previously in another queue, then we should remove it from there
   -- and remove the associated throttle
   if oldqueue then
-    local queue_obj = Qless.queue(oldqueue)
+    local queue_obj = Reqless.queue(oldqueue)
     queue_obj:remove_job(jid)
-    local old_qid = QlessQueue.ns .. oldqueue
+    local old_qid = ReqlessQueue.ns .. oldqueue
     for index, throttle_name in ipairs(throttles) do
       if throttle_name == old_qid then
         table.remove(throttles, index)
@@ -595,8 +595,8 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
         event  = 'lock_lost',
         worker = oldworker
       })
-      Qless.publish('w:' .. oldworker, encoded)
-      Qless.publish('log', encoded)
+      Reqless.publish('w:' .. oldworker, encoded)
+      Reqless.publish('log', encoded)
     end
   end
 
@@ -608,7 +608,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
 
   -- Add this job to the list of jobs tagged with whatever tags were supplied
   for _, tag in ipairs(tags) do
-    Qless.job(jid):insert_tag(now, tag)
+    Reqless.job(jid):insert_tag(now, tag)
   end
 
   -- If we're in the failed state, remove all of our data
@@ -628,7 +628,7 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   end
 
   -- insert default queue throttle
-  table.insert(throttles, QlessQueue.ns .. self.name)
+  table.insert(throttles, ReqlessQueue.ns .. self.name)
 
   data = {
     'jid'      , jid,
@@ -647,15 +647,15 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   }
 
   -- First, let's save its data
-  redis.call('hmset', QlessJob.ns .. jid, unpack(data))
+  redis.call('hmset', ReqlessJob.ns .. jid, unpack(data))
 
   -- These are the jids we legitimately have to wait on
   for _, j in ipairs(depends) do
     -- Make sure it's something other than 'nil' or complete.
-    local state = redis.call('hget', QlessJob.ns .. j, 'state')
+    local state = redis.call('hget', ReqlessJob.ns .. j, 'state')
     if (state and state ~= 'complete') then
-      redis.call('sadd', QlessJob.ns .. j .. '-dependents'  , jid)
-      redis.call('sadd', QlessJob.ns .. jid .. '-dependencies', j)
+      redis.call('sadd', ReqlessJob.ns .. j .. '-dependents'  , jid)
+      redis.call('sadd', ReqlessJob.ns .. jid .. '-dependencies', j)
     end
   end
 
@@ -663,11 +663,11 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   -- then we'll have to schedule it. Otherwise, we're just
   -- going to add it to the work queue.
   if delay > 0 then
-    if redis.call('scard', QlessJob.ns .. jid .. '-dependencies') > 0 then
+    if redis.call('scard', ReqlessJob.ns .. jid .. '-dependencies') > 0 then
       -- We've already put it in 'depends'. Now, we must just save the data
       -- for when it's scheduled
       self.depends.add(now, jid)
-      redis.call('hmset', QlessJob.ns .. jid,
+      redis.call('hmset', ReqlessJob.ns .. jid,
         'state', 'depends',
         'scheduled', now + delay)
     else
@@ -676,10 +676,10 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   else
     -- to avoid false negatives when popping jobs check if the job should be
     -- throttled immediately.
-    local job = Qless.job(jid)
-    if redis.call('scard', QlessJob.ns .. jid .. '-dependencies') > 0 then
+    local job = Reqless.job(jid)
+    if redis.call('scard', ReqlessJob.ns .. jid .. '-dependencies') > 0 then
       self.depends.add(now, jid)
-      redis.call('hset', QlessJob.ns .. jid, 'state', 'depends')
+      redis.call('hset', ReqlessJob.ns .. jid, 'state', 'depends')
     elseif not job:throttles_available() then
       self:throttle(now, job)
     else
@@ -695,14 +695,14 @@ function QlessQueue:put(now, worker, jid, klass, raw_data, delay, ...)
   end
 
   if redis.call('zscore', 'ql:tracked', jid) ~= false then
-    Qless.publish('put', jid)
+    Reqless.publish('put', jid)
   end
 
   return jid
 end
 
 -- Move `count` jobs out of the failed state and into this queue
-function QlessQueue:unfail(now, group, count)
+function ReqlessQueue:unfail(now, group, count)
   assert(group, 'Unfail(): Arg "group" missing')
   count = assert(tonumber(count or 25),
     'Unfail(): Arg "count" not a number: ' .. tostring(count))
@@ -713,10 +713,10 @@ function QlessQueue:unfail(now, group, count)
   -- And now set each job's state, and put it into the appropriate queue
   local toinsert = {}
   for _, jid in ipairs(jids) do
-    local job = Qless.job(jid)
+    local job = Reqless.job(jid)
     local data = job:data()
     job:history(now, 'put', {queue = self.name})
-    redis.call('hmset', QlessJob.ns .. data.jid,
+    redis.call('hmset', ReqlessJob.ns .. data.jid,
       'state'    , 'waiting',
       'worker'   , '',
       'expires'  , 0,
@@ -735,7 +735,7 @@ function QlessQueue:unfail(now, group, count)
 end
 
 -- Recur a job of type klass in this queue
-function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
+function ReqlessQueue:recur(now, jid, klass, raw_data, spec, ...)
   assert(jid  , 'RecurringJob On(): Arg "jid" missing')
   assert(klass, 'RecurringJob On(): Arg "klass" missing')
   assert(spec , 'RecurringJob On(): Arg "spec" missing')
@@ -785,7 +785,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     -- If it has previously been in another queue, then we should remove
     -- some information about it
     if old_queue then
-      Qless.queue(old_queue).recurring.remove(jid)
+      Reqless.queue(old_queue).recurring.remove(jid)
 
       for index, throttle_name in ipairs(throttles) do
         if throttle_name == old_queue then
@@ -795,7 +795,7 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
     end
 
     -- insert default queue throttle
-    table.insert(throttles, QlessQueue.ns .. self.name)
+    table.insert(throttles, ReqlessQueue.ns .. self.name)
 
     -- Do some insertions
     redis.call('hmset', 'ql:r:' .. jid,
@@ -830,14 +830,14 @@ function QlessQueue:recur(now, jid, klass, raw_data, spec, ...)
 end
 
 -- Return the length of the queue
-function QlessQueue:length()
+function ReqlessQueue:length()
   return  self.locks.length() + self.work.length() + self.scheduled.length()
 end
 
 -------------------------------------------------------------------------------
 -- Housekeeping methods
 -------------------------------------------------------------------------------
-function QlessQueue:remove_job(jid)
+function ReqlessQueue:remove_job(jid)
   self.work.remove(jid)
   self.locks.remove(jid)
   self.throttled.remove(jid)
@@ -846,7 +846,7 @@ function QlessQueue:remove_job(jid)
 end
 
 -- Instantiate any recurring jobs that are ready
-function QlessQueue:check_recurring(now, count)
+function ReqlessQueue:check_recurring(now, count)
   if count <= 0 then
     return
   end
@@ -893,11 +893,11 @@ function QlessQueue:check_recurring(now, count)
       -- Add this job to the list of jobs tagged with whatever tags were
       -- supplied
       for _, tag in ipairs(_tags) do
-        Qless.job(child_jid):insert_tag(now, tag)
+        Reqless.job(child_jid):insert_tag(now, tag)
       end
 
       -- First, let's save its data
-      redis.call('hmset', QlessJob.ns .. child_jid,
+      redis.call('hmset', ReqlessJob.ns .. child_jid,
         'jid'      , child_jid,
         'klass'    , klass,
         'data'     , data,
@@ -913,7 +913,7 @@ function QlessQueue:check_recurring(now, count)
         'throttles', throttles,
         'spawned_from_jid', jid)
 
-      Qless.job(child_jid):history(score, 'put', {queue = self.name})
+      Reqless.job(child_jid):history(score, 'put', {queue = self.name})
 
       -- Now, if a delay was provided, and if it's in the future,
       -- then we'll have to schedule it. Otherwise, we're just
@@ -929,7 +929,7 @@ end
 -- Check for any jobs that have been scheduled, and shovel them onto
 -- the work queue. Returns nothing, but afterwards, up to `count`
 -- scheduled jobs will be moved into the work queue
-function QlessQueue:check_scheduled(now, count)
+function ReqlessQueue:check_scheduled(now, count)
   if count <= 0 then
     return
   end
@@ -942,19 +942,19 @@ function QlessQueue:check_scheduled(now, count)
     -- into the work queue and then when that's complete, we'll
     -- remove them from the scheduled queue
     local priority = tonumber(
-      redis.call('hget', QlessJob.ns .. jid, 'priority') or 0)
+      redis.call('hget', ReqlessJob.ns .. jid, 'priority') or 0)
     self.work.add(now, priority, jid)
     self.scheduled.remove(jid)
 
     -- We should also update them to have the state 'waiting'
     -- instead of 'scheduled'
-    redis.call('hset', QlessJob.ns .. jid, 'state', 'waiting')
+    redis.call('hset', ReqlessJob.ns .. jid, 'state', 'waiting')
   end
 end
 
 -- Check for and invalidate any locks that have been lost. Returns the
 -- list of jids that have been invalidated
-function QlessQueue:invalidate_locks(now, count)
+function ReqlessQueue:invalidate_locks(now, count)
   local jids = {}
   -- Iterate through all the expired locks and add them to the list
   -- of keys that we'll return
@@ -962,17 +962,17 @@ function QlessQueue:invalidate_locks(now, count)
     -- Remove this job from the jobs that the worker that was running it
     -- has
     local worker, failure = unpack(
-      redis.call('hmget', QlessJob.ns .. jid, 'worker', 'failure'))
+      redis.call('hmget', ReqlessJob.ns .. jid, 'worker', 'failure'))
     redis.call('zrem', 'ql:w:' .. worker .. ':jobs', jid)
 
     -- We'll provide a grace period after jobs time out for them to give
     -- some indication of the failure mode. After that time, however, we'll
     -- consider the worker dust in the wind
-    local grace_period = tonumber(Qless.config.get('grace-period'))
+    local grace_period = tonumber(Reqless.config.get('grace-period'))
 
     -- Whether or not we've already sent a coutesy message
     local courtesy_sent = tonumber(
-      redis.call('hget', QlessJob.ns .. jid, 'grace') or 0)
+      redis.call('hget', ReqlessJob.ns .. jid, 'grace') or 0)
 
     -- If the remaining value is an odd multiple of 0.5, then we'll assume
     -- that we're just sending the message. Otherwise, it's time to
@@ -990,10 +990,10 @@ function QlessQueue:invalidate_locks(now, count)
       -- This is where we supply a courtesy message and give the worker
       -- time to provide a failure message
       if redis.call('zscore', 'ql:tracked', jid) ~= false then
-        Qless.publish('stalled', jid)
+        Reqless.publish('stalled', jid)
       end
-      Qless.job(jid):history(now, 'timed-out')
-      redis.call('hset', QlessJob.ns .. jid, 'grace', 1)
+      Reqless.job(jid):history(now, 'timed-out')
+      redis.call('hset', ReqlessJob.ns .. jid, 'grace', 1)
 
       -- Send a message to let the worker know that its lost its lock on
       -- the job
@@ -1002,8 +1002,8 @@ function QlessQueue:invalidate_locks(now, count)
         event  = 'lock_lost',
         worker = worker,
       })
-      Qless.publish('w:' .. worker, encoded)
-      Qless.publish('log', encoded)
+      Reqless.publish('w:' .. worker, encoded)
+      Reqless.publish('log', encoded)
       self.locks.add(now + grace_period, jid)
 
       -- If we got any expired locks, then we should increment the
@@ -1017,11 +1017,11 @@ function QlessQueue:invalidate_locks(now, count)
     if invalidate then
       -- Unset the grace period attribute so that next time we'll send
       -- the grace period
-      redis.call('hdel', QlessJob.ns .. jid, 'grace', 0)
+      redis.call('hdel', ReqlessJob.ns .. jid, 'grace', 0)
 
       -- See how many remaining retries the job has
       local remaining = tonumber(redis.call(
-        'hincrby', QlessJob.ns .. jid, 'remaining', -1))
+        'hincrby', ReqlessJob.ns .. jid, 'remaining', -1))
 
       -- This is where we actually have to time out the work
       if remaining < 0 then
@@ -1031,19 +1031,19 @@ function QlessQueue:invalidate_locks(now, count)
         self.locks.remove(jid)
         self.scheduled.remove(jid)
 
-        local job = Qless.job(jid)
-        local job_data = Qless.job(jid):data()
+        local job = Reqless.job(jid)
+        local job_data = Reqless.job(jid):data()
         local queue = job_data['queue']
         local group = 'failed-retries-' .. queue
 
         job:throttles_release(now)
 
         job:history(now, 'failed', {group = group})
-        redis.call('hmset', QlessJob.ns .. jid, 'state', 'failed',
+        redis.call('hmset', ReqlessJob.ns .. jid, 'state', 'failed',
           'worker', '',
           'expires', '')
         -- If the failure has not already been set, then set it
-        redis.call('hset', QlessJob.ns .. jid,
+        redis.call('hset', ReqlessJob.ns .. jid,
         'failure', cjson.encode({
           group   = group,
           message = 'Job exhausted retries in queue "' .. self.name .. '"',
@@ -1057,9 +1057,9 @@ function QlessQueue:invalidate_locks(now, count)
         redis.call('lpush', 'ql:f:' .. group, jid)
 
         if redis.call('zscore', 'ql:tracked', jid) ~= false then
-          Qless.publish('failed', jid)
+          Reqless.publish('failed', jid)
         end
-        Qless.publish('log', cjson.encode({
+        Reqless.publish('log', cjson.encode({
           jid     = jid,
           event   = 'failed',
           group   = group,
@@ -1084,8 +1084,8 @@ function QlessQueue:invalidate_locks(now, count)
 end
 
 -- Forget the provided queues. As in, remove them from the list of known queues
-function QlessQueue.deregister(...)
-  redis.call('zrem', Qless.ns .. 'queues', unpack(arg))
+function ReqlessQueue.deregister(...)
+  redis.call('zrem', Reqless.ns .. 'queues', unpack(arg))
 end
 
 -- Return information about a particular queue, or all queues
@@ -1102,9 +1102,9 @@ end
 --          ...
 --      }
 --  ]
-function QlessQueue.counts(now, name)
+function ReqlessQueue.counts(now, name)
   if name then
-    local queue = Qless.queue(name)
+    local queue = Reqless.queue(name)
     local stalled = queue.locks.length(now)
     -- Check for any scheduled jobs that need to be moved
     queue:check_scheduled(now, queue.scheduled.length())
@@ -1124,7 +1124,7 @@ function QlessQueue.counts(now, name)
   local queues = redis.call('zrange', 'ql:queues', 0, -1)
   local response = {}
   for _, qname in ipairs(queues) do
-    table.insert(response, QlessQueue.counts(now, qname))
+    table.insert(response, ReqlessQueue.counts(now, qname))
   end
   return response
 end

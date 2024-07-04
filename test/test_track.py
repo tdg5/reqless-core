@@ -1,10 +1,10 @@
 '''Test all the tracking'''
 
 import redis
-from common import TestQless
+from common import TestReqless
 
 
-class TestTrack(TestQless):
+class TestTrack(TestReqless):
     '''Test our tracking abilities'''
     def test_malfomed(self):
         '''Enumerate all the ways that it can be malformed'''

@@ -1,12 +1,12 @@
 '''Tests about worker information'''
 
-from common import TestQless
+from common import TestReqless
 
 
-class TestWorker(TestQless):
+class TestWorker(TestReqless):
     '''Test worker information API'''
     def setUp(self):
-        TestQless.setUp(self)
+        TestReqless.setUp(self)
         # No grace period
         self.lua('config.set', 0, 'grace-period', 0)
 
