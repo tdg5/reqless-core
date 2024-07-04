@@ -212,6 +212,10 @@ QlessAPI['recurringJob.unrecur'] = function(now, jid)
   return Qless.recurring(jid):unrecur()
 end
 
+QlessAPI['recurringJob.untag'] = function(now, jid, ...)
+  return Qless.recurring(jid):untag(unpack(arg))
+end
+
 QlessAPI['recurringJob.update'] = function(now, jid, ...)
   return Qless.recurring(jid):update(now, unpack(arg))
 end
@@ -267,10 +271,6 @@ end
 
 QlessAPI['workers.list'] = function(now)
   return cjson.encode(QlessWorker.counts(now, nil))
-end
-
-QlessAPI['recur.untag'] = function(now, jid, ...)
-  return Qless.recurring(jid):untag(unpack(arg))
 end
 
 -------------------------------------------------------------------------------
@@ -381,6 +381,11 @@ end
 -- Deprecated. Use recurringJob.tag instead.
 QlessAPI['recur.tag'] = function(now, jid, ...)
   return QlessAPI['recurringJob.tag'](now, jid, unpack(arg))
+end
+
+-- Deprecated. Use recurringJob.untag instead.
+QlessAPI['recur.untag'] = function(now, jid, ...)
+  return QlessAPI['recurringJob.untag'](now, jid, unpack(arg))
 end
 
 -- Deprecated. Use recurringJob.update instead.

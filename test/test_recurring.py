@@ -301,6 +301,16 @@ class TestRecurring(TestQless):
             'interval', 60, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
+        self.lua('recurringJob.untag', 0, 'jid', 'foo')
+        self.assertEqual(
+            self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], {})
+
+    def test_untag_still_works(self):
+        '''Deprecated untag API still works'''
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
+            'interval', 60, 0, 'tags', ['foo'])
+        self.assertEqual(
+            self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
         self.lua('recur.untag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], {})
