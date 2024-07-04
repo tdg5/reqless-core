@@ -282,6 +282,15 @@ class TestRecurring(TestQless):
         self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
+        self.lua('recurringJob.tag', 0, 'jid', 'foo')
+        self.assertEqual(
+            self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], ['foo'])
+
+    def test_recur_dot_tag_still_works(self):
+        '''Deprecated recur.tag API still works'''
+        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.assertEqual(
+            self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
         self.lua('recur.tag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], ['foo'])
