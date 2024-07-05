@@ -142,8 +142,8 @@ class TestFailed(TestReqless):
     def test_malformed(self):
         '''Enumerate all the malformed requests'''
         self.assertMalformed(self.lua, [
-            ('jobs.failed', 0, 'foo', 'foo'),
-            ('jobs.failed', 0, 'foo', 0, 'foo')
+            ('jobs.failedByGroup', 0, 'foo', 'foo'),
+            ('jobs.failedByGroup', 0, 'foo', 0, 'foo')
         ])
 
     def test_basic(self):
@@ -151,10 +151,10 @@ class TestFailed(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message')
-        self.assertEqual(self.lua('jobs.failed', 0), {
+        self.assertEqual(self.lua('failureGroups.counts', 0), {
             'group': 1
         })
-        self.assertEqual(self.lua('jobs.failed', 0, 'group'), {
+        self.assertEqual(self.lua('jobs.failedByGroup', 0, 'group'), {
             'total': 1,
             'jobs': ['jid']
         })
@@ -165,10 +165,10 @@ class TestFailed(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         self.lua('queue.pop', job['expires'] + 10, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('jobs.failed', 0), {
+        self.assertEqual(self.lua('failureGroups.counts', 0), {
             'failed-retries-queue': 1
         })
-        self.assertEqual(self.lua('jobs.failed', 0, 'failed-retries-queue'), {
+        self.assertEqual(self.lua('jobs.failedByGroup', 0, 'failed-retries-queue'), {
             'total': 1,
             'jobs': ['jid']
         })
@@ -183,9 +183,9 @@ class TestFailed(TestReqless):
         # Get two pages of 50 and make sure they're what we expect
         jids = list(reversed(jids))
         self.assertEqual(
-            self.lua('jobs.failed', 0, 'group',  0, 50)['jobs'], jids[:50])
+            self.lua('jobs.failedByGroup', 0, 'group',  0, 50)['jobs'], jids[:50])
         self.assertEqual(
-            self.lua('jobs.failed', 0, 'group', 50, 50)['jobs'], jids[50:])
+            self.lua('jobs.failedByGroup', 0, 'group', 50, 50)['jobs'], jids[50:])
 
     def test_failed_still_works(self):
         '''Deprecated failed API still works'''

@@ -20,6 +20,10 @@ ReqlessAPI['config.unset'] = function(now, key)
   return Reqless.config.unset(key)
 end
 
+ReqlessAPI['failureGroups.counts'] = function(now, start, limit)
+  return cjson.encode(Reqless.failed(nil, start, limit))
+end
+
 ReqlessAPI['job.cancel'] = function(now, ...)
   return Reqless.cancel(now, unpack(arg))
 end
@@ -112,7 +116,7 @@ ReqlessAPI["jobs.completed"] = function(now, offset, limit)
   return Reqless.jobs(now, 'complete', offset, limit)
 end
 
-ReqlessAPI['jobs.failed'] = function(now, group, start, limit)
+ReqlessAPI['jobs.failedByGroup'] = function(now, group, start, limit)
   return cjson.encode(Reqless.failed(group, start, limit))
 end
 
@@ -297,9 +301,12 @@ ReqlessAPI['fail'] = function(now, jid, worker, group, message, data)
   return ReqlessAPI['job.fail'](now, jid, worker, group, message, data)
 end
 
--- Deprecated. Use jobs.failed instead.
+-- Deprecated. Use failureGroups.counts or jobs.failedByGroup instead.
 ReqlessAPI['failed'] = function(now, group, start, limit)
-  return ReqlessAPI['jobs.failed'](now, group, start, limit)
+  if group then
+    return ReqlessAPI['jobs.failedByGroup'](now, group, start, limit)
+  end
+  return ReqlessAPI['failureGroups.counts'](now, start, limit)
 end
 
 -- Deprecated. Use job.get instead.
