@@ -1,3 +1,4 @@
+docker_data
 reqless.lua
 reqless-lib.lua
 *.pyc
