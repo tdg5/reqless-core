@@ -28,8 +28,12 @@ ReqlessAPI['job.cancel'] = function(now, ...)
   return Reqless.cancel(now, unpack(arg))
 end
 
-ReqlessAPI['job.complete'] = function(now, jid, worker, queue, data, ...)
-  return Reqless.job(jid):complete(now, worker, queue, data, unpack(arg))
+ReqlessAPI['job.complete'] = function(now, jid, worker, queue, data)
+  return Reqless.job(jid):complete(now, worker, queue, data)
+end
+
+ReqlessAPI['job.completeAndRequeue'] = function(now, jid, worker, queue, data, next_queue, ...)
+  return Reqless.job(jid):complete(now, worker, queue, data, 'next', next_queue, unpack(arg))
 end
 
 ReqlessAPI['job.depends'] = function(now, jid, command, ...)
@@ -288,7 +292,8 @@ end
 
 -- Deprecated. Use job.complete instead.
 ReqlessAPI['complete'] = function(now, jid, worker, queue, data, ...)
-  return ReqlessAPI['job.complete'](now, jid, worker, queue, data, unpack(arg))
+  -- Call job:complete directly because optional args could be in any order
+  return Reqless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
 -- Deprecated. Use job.depends instead.

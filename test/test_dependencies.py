@@ -40,8 +40,10 @@ class TestDependencies(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.assertEqual(len(self.lua('queue.pop', 2, 'queue', 'worker', 1)), 1)
-        self.lua('job.complete', 3, 'a', 'worker', 'queue', {}, 'next', 'foo',
-            'depends', ['b'], 'delay', 10)
+        self.lua(
+            'job.completeAndRequeue', 3, 'a', 'worker', 'queue', {}, 'foo',
+            'depends', ['b'], 'delay', 10
+        )
         # Now its state should be 'depends'
         self.assertEqual(self.lua('job.get', 4, 'a')['state'], 'depends')
         # Now pop and complete the job it depends on
@@ -58,8 +60,10 @@ class TestDependencies(TestReqless):
         self.lua('queue.put', 1, 'worker', 'queue', 'a', 'klass', {}, 0)
         # Pop 'b', and then complete it it and make it depend on 'a'
         self.lua('queue.pop', 2, 'queue', 'worker', 1)
-        self.lua('job.complete', 3, 'b', 'worker', 'queue', {},
-            'depends', ['a'], 'next', 'queue')
+        self.lua(
+            'job.completeAndRequeue', 3, 'b', 'worker', 'queue', {}, 'queue',
+            'depends', ['a']
+        )
         # Ensure that it shows up everywhere it should
         self.assertEqual(self.lua('job.get', 4, 'b')['state'], 'depends')
         self.assertEqual(self.lua('job.get', 5, 'b')['dependencies'], ['a'])

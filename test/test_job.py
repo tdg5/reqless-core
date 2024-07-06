@@ -106,17 +106,13 @@ class TestComplete(TestReqless):
     '''Test how we complete jobs'''
     def test_malformed(self):
         '''Enumerate all the way they can be malformed'''
+        # Must actually create and pop a job or non-existant job will cause
+        # errors that make non-malformed arguments seem malformed.
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.pop', 1, 'queue', 'worker', 1)
         self.assertMalformed(self.lua, [
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'next'),
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'delay'),
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'delay', 'foo'),
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends'),
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends', '[}'),
-            # Can't have 'depends' with a delay
-            ('job.complete', 0, 'jid', 'worker', 'queue', {},
-                'depends', ['foo'], 'delay', 5),
-            # Can't have 'depends' without 'next'
-            ('job.complete', 0, 'jid', 'worker', 'queue', {}, 'depends', ['foo'])
+            ('job.completeAndRequeue', 2, 'jid', 'worker', 'queue', {}, 'queue-2', 'delay', 'foo'),
+            ('job.completeAndRequeue', 2, 'jid', 'worker', 'queue', {}, 'queue-2', 'depends', '[}'),
         ])
 
     def test_complete_waiting(self):
@@ -210,7 +206,7 @@ class TestComplete(TestReqless):
         '''Can complete and advance a job in one fell swooop'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.lua('job.complete', 2, 'jid', 'worker', 'queue', {}, 'next', 'foo')
+        self.lua('job.completeAndRequeue', 2, 'jid', 'worker', 'queue', {}, 'foo')
         self.assertEqual(
             self.lua('queue.pop', 3, 'foo', 'worker', 10)[0]['jid'], 'jid')
 
@@ -218,7 +214,7 @@ class TestComplete(TestReqless):
         '''Does not mangle empty arrays in job data when advancing'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', '[]', 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.lua('job.complete', 2, 'jid', 'worker', 'queue', '[]', 'next', 'foo')
+        self.lua('job.completeAndRequeue', 2, 'jid', 'worker', 'queue', '[]', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 3, 'foo', 'worker', 10)[0]['data'], '[]')
 
@@ -285,6 +281,15 @@ class TestComplete(TestReqless):
         self.lua('complete', 2, 'jid', 'worker', 'queue', {})
         # Ensure that it shows up everywhere it should
         self.assertEqual(self.lua('job.get', 3, 'jid')['state'], 'complete')
+
+    def test_complete_that_reques_still_works(self):
+        '''Deprecated complete API still works'''
+        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
+        self.lua('queue.pop', 1, 'queue', 'worker', 1)
+        self.lua('complete', 2, 'jid', 'worker', 'queue', {}, 'next', 'queue-2')
+
+        # The job should be requeued immediately to queue-2
+        self.assertEqual(self.lua('job.get', 3, 'jid')['queue'], 'queue-2')
 
 class TestTimeout(TestReqless):
     '''Basic timeout works'''

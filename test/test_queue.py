@@ -268,7 +268,7 @@ class TestQueue(TestReqless):
         '''When advancing a job to a new queue, queues should know about it'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
-        self.lua('job.complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'another')
+        self.lua('job.completeAndRequeue', 0, 'jid', 'worker', 'queue', {}, 'another')
         expected = dict(self.expected)
         expected['name'] = 'another'
         expected['waiting'] = 1

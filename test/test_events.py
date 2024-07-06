@@ -136,8 +136,7 @@ class TestEvents(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         with self.lua:
-            self.lua(
-                'job.complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'queue')
+            self.lua('job.completeAndRequeue', 0, 'jid', 'worker', 'queue', {}, 'queue')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:log',
             'data':

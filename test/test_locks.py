@@ -163,7 +163,7 @@ class TestRetries(TestReqless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua(
-            'job.complete', 0, 'jid', 'worker', 'queue', {}, 'next', 'queue')
+            'job.completeAndRequeue', 0, 'jid', 'worker', 'queue', {}, 'queue')
         self.assertEqual(self.lua(
             'queue.pop', 0, 'queue', 'worker', 10)[0]['remaining'], 5)
 
