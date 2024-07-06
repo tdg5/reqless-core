@@ -119,9 +119,7 @@ function ReqlessJob:complete(now, worker, queue_name, raw_data, ...)
   --          update history
   self:history(now, 'done')
 
-  if raw_data then
-    redis.call('hset', ReqlessJob.ns .. self.jid, 'data', raw_data)
-  end
+  redis.call('hset', ReqlessJob.ns .. self.jid, 'data', raw_data)
 
   -- Remove the job from the previous queue
   local queue = Reqless.queue(queue_name)
