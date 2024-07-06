@@ -192,13 +192,13 @@ function Reqless.jobs(now, state, ...)
       offset + count - 1)
   end
 
-  local name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
+  local queue_name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
   local offset = assert(tonumber(arg[2] or 0),
     'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
   local count  = assert(tonumber(arg[3] or 25),
     'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
 
-  local queue = Reqless.queue(name)
+  local queue = Reqless.queue(queue_name)
   if state == 'running' then
     return queue.locks.peek(now, offset, count)
   elseif state == 'stalled' then
