@@ -80,7 +80,7 @@ function ReqlessJob:complete(now, worker, queue_name, raw_data, ...)
   local depends = assert(cjson.decode(options['depends'] or '[]'),
     'Complete(): Arg "depends" not JSON: ' .. tostring(options['depends']))
 
-  -- Depends doesn't make sense without next_queue_name
+  -- Delay doesn't make sense without next_queue_name
   if options['delay'] and next_queue_name == nil then
     error('Complete(): "delay" cannot be used without a "next".')
   end

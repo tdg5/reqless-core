@@ -319,7 +319,7 @@ ReqlessAPI.heartbeat = function(now, jid, worker, data)
   return ReqlessAPI['job.heartbeat'](now, jid, worker, data)
 end
 
--- Deprecated. Use jobs.completed or queue.jobs.byState instead.
+-- Deprecated. Use jobs.completed or queue.jobsByState instead.
 ReqlessAPI['jobs'] = function(now, state, ...)
   if state == 'complete' then
     return ReqlessAPI['jobs.completed'](now, unpack(arg))
