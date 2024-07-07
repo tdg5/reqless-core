@@ -170,26 +170,18 @@ Configuration Options
 The configuration should go in the key `ql:config`, and here are some of the
 configuration options that `reqless` is meant to support:
 
-1. `heartbeat` (60) --
-	The default heartbeat in seconds for queues
-1. `stats-history` (30) --
-	The number of days to store summary stats
-1. `histogram-history` (7) --
-	The number of days to store histogram data
-1. `jobs-history-count` (50k) --
-	How many jobs to keep data for after they're completed
-1. `jobs-history` (7 * 24 * 60 * 60) --
-	How many seconds to keep jobs after they're completed
-1. `heartbeat-<queue name>` --
-	The heartbeat interval (in seconds) for a particular queue
-1. `max-worker-age` --
-    How long before workers are considered disappeared
-1. `<queue>-max-concurrency` --
-	The maximum number of jobs that can be running in a queue. If this number
-	is reduced, it does not impact any currently-running jobs
-1. `max-job-history` --
-	The maximum number of items in a job's history. This can be used to help
-	control the size of long-running jobs' history
+| Name | Default | Description |
+|------|---------|-------------|
+| `application` | `reqless` | The name of the application as shown in Reqless UI. |
+| `grace-period` | `10` | The grace period, in seconds, after jobs time out for them to give some indication of the failure mode. |
+| `heartbeat` | `60` | The frequency, in seconds, with which a worker must periodically check in to renew the lock on a job that the worker is processing. |
+| `jobs-history` | `7 * 24 * 60 * 60` | How long, in seconds, to keep jobs after they've been completed. |
+| `jobs-history-count` | `50000` | The number of jobs to keep data for after they've been completed. |
+| `max-job-history` | `100` | The maximum number of items in a job's history. This can be used to help control the size of long-running jobs' history. |
+| `max-pop-retry` | `1` | The maximum number of times to try to attempt to pop jobs from a queue before giving up. Useful in scenarios where many throttles limit the available jobs. |
+| `max-worker-age` | `24 * 60 * 60` | The number of seconds to retain stats for a worker after the worker has been removed from the system. |
+| `<queue name>-heartbeat` | See `heartbeat` | The heartbeat interval, in seconds, for the named queue. |
+| `<queue name>-max-pop-retry` | See `max-pop-retry` | The maximum number of times to try to attempt to pop jobs from the named queue before giving up. Useful in scenarios where many throttles limit the available jobs. |
 
 
 Internal Redis Structure

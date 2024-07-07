@@ -5,12 +5,13 @@
 -- This represents our default configuration settings
 Reqless.config.defaults = {
   ['application']        = 'reqless',
-  ['heartbeat']          = 60,
   ['grace-period']       = 10,
-  ['stats-history']      = 30,
-  ['histogram-history']  = 7,
+  ['heartbeat']          = 60,
+  ['jobs-history']       = 604800,
   ['jobs-history-count'] = 50000,
-  ['jobs-history']       = 604800
+  ['max-job-history']    = 100,
+  ['max-pop-retry']      = 1,
+  ['max-worker-age']     = 86400,
 }
 
 -- Get one or more of the keys

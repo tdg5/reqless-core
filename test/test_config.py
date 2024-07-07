@@ -11,10 +11,12 @@ class TestConfig(TestReqless):
             'application': 'reqless',
             'grace-period': 10,
             'heartbeat': 60,
-            'histogram-history': 7,
             'jobs-history': 604800,
             'jobs-history-count': 50000,
-            'stats-history': 30})
+            'max-job-history': 100,
+            'max-pop-retry': 1,
+            'max-worker-age': 86400,
+        })
 
     def test_get_all(self):
         '''Should be able to access all configurations'''
@@ -22,16 +24,16 @@ class TestConfig(TestReqless):
             'application': 'reqless',
             'grace-period': 10,
             'heartbeat': 60,
-            'histogram-history': 7,
             'jobs-history': 604800,
             'jobs-history-count': 50000,
-            'stats-history': 30})
+            'max-job-history': 100,
+            'max-pop-retry': 1,
+            'max-worker-age': 86400,
+        })
 
     def test_get(self):
         '''Should be able to get each key individually'''
         for key, value in self.lua('config.get', 0).items():
-            print(key)
-            print(value)
             retrievedValue = self.lua('config.get', 0, key)
             if isinstance(retrievedValue, bytes):
                 retrievedValue = retrievedValue.decode("utf-8")
