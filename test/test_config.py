@@ -4,10 +4,21 @@ from common import TestReqless
 
 
 class TestConfig(TestReqless):
-    '''Test our config scripts'''
-    def test_all(self):
-        '''Should be able to access all configurations'''
+    '''Test configuration functionality'''
+    def test_get_without_key_still_works(self):
+        '''Deprecated config.get retrieval of all configs still works'''
         self.assertEqual(self.lua('config.get', 0), {
+            'application': 'reqless',
+            'grace-period': 10,
+            'heartbeat': 60,
+            'histogram-history': 7,
+            'jobs-history': 604800,
+            'jobs-history-count': 50000,
+            'stats-history': 30})
+
+    def test_get_all(self):
+        '''Should be able to access all configurations'''
+        self.assertEqual(self.lua('config.getAll', 0), {
             'application': 'reqless',
             'grace-period': 10,
             'heartbeat': 60,

@@ -4,10 +4,15 @@
 -------------------------------------------------------------------------------
 local ReqlessAPI = {}
 
+-- Where possible, use config.getAll to fetch all configs
 ReqlessAPI['config.get'] = function(now, key)
   if key then
     return Reqless.config.get(key)
   end
+  return ReqlessAPI['config.getAll'](now)
+end
+
+ReqlessAPI['config.getAll'] = function(now)
   return cjson.encode(Reqless.config.get(nil))
 end
 
