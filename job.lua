@@ -517,10 +517,14 @@ end
 -- the current dependencies are removed. If 'off' is provided and the next
 -- argument is not 'all', then those jids are removed as dependencies.
 --
--- If a job is not already in the 'depends' state, then this call will return
--- false. Otherwise, it will return true
+-- If a job is not already in the 'depends' state, then this call will raise an
+-- error.  Otherwise, it will return true.
 function ReqlessJob:depends(now, command, ...)
   assert(command, 'Depends(): Arg "command" missing')
+  if command ~= 'on' and command ~= 'off' then
+    error('Depends(): Argument "command" must be "on" or "off"')
+  end
+
   local state = redis.call('hget', ReqlessJob.ns .. self.jid, 'state')
   if state ~= 'depends' then
     error('Depends(): Job ' .. self.jid ..
@@ -540,44 +544,42 @@ function ReqlessJob:depends(now, command, ...)
       end
     end
     return true
-  elseif command == 'off' then
-    if arg[1] == 'all' then
-      for _, j in ipairs(redis.call(
-        'smembers', ReqlessJob.ns .. self.jid .. '-dependencies')) do
-        redis.call('srem', ReqlessJob.ns .. j .. '-dependents', self.jid)
-      end
-      redis.call('del', ReqlessJob.ns .. self.jid .. '-dependencies')
-      local queue_name, priority = unpack(redis.call(
-        'hmget', ReqlessJob.ns .. self.jid, 'queue', 'priority'))
-      if queue_name then
-        local queue = Reqless.queue(queue_name)
-        queue.depends.remove(self.jid)
-        queue.work.add(now, priority, self.jid)
-        redis.call('hset', ReqlessJob.ns .. self.jid, 'state', 'waiting')
-      end
-    else
-      for _, j in ipairs(arg) do
-        redis.call('srem', ReqlessJob.ns .. j .. '-dependents', self.jid)
-        redis.call(
-          'srem', ReqlessJob.ns .. self.jid .. '-dependencies', j)
-        if redis.call('scard',
-          ReqlessJob.ns .. self.jid .. '-dependencies') == 0 then
-          local queue_name, priority = unpack(redis.call(
-            'hmget', ReqlessJob.ns .. self.jid, 'queue', 'priority'))
-          if queue_name then
-            local queue = Reqless.queue(queue_name)
-            queue.depends.remove(self.jid)
-            queue.work.add(now, priority, self.jid)
-            redis.call('hset',
-              ReqlessJob.ns .. self.jid, 'state', 'waiting')
-          end
+  end
+
+  if arg[1] == 'all' then
+    for _, j in ipairs(redis.call(
+      'smembers', ReqlessJob.ns .. self.jid .. '-dependencies')) do
+      redis.call('srem', ReqlessJob.ns .. j .. '-dependents', self.jid)
+    end
+    redis.call('del', ReqlessJob.ns .. self.jid .. '-dependencies')
+    local queue_name, priority = unpack(redis.call(
+      'hmget', ReqlessJob.ns .. self.jid, 'queue', 'priority'))
+    if queue_name then
+      local queue = Reqless.queue(queue_name)
+      queue.depends.remove(self.jid)
+      queue.work.add(now, priority, self.jid)
+      redis.call('hset', ReqlessJob.ns .. self.jid, 'state', 'waiting')
+    end
+  else
+    for _, j in ipairs(arg) do
+      redis.call('srem', ReqlessJob.ns .. j .. '-dependents', self.jid)
+      redis.call(
+        'srem', ReqlessJob.ns .. self.jid .. '-dependencies', j)
+      if redis.call('scard',
+        ReqlessJob.ns .. self.jid .. '-dependencies') == 0 then
+        local queue_name, priority = unpack(redis.call(
+          'hmget', ReqlessJob.ns .. self.jid, 'queue', 'priority'))
+        if queue_name then
+          local queue = Reqless.queue(queue_name)
+          queue.depends.remove(self.jid)
+          queue.work.add(now, priority, self.jid)
+          redis.call('hset',
+            ReqlessJob.ns .. self.jid, 'state', 'waiting')
         end
       end
     end
-    return true
   end
-
-  error('Depends(): Argument "command" must be "on" or "off"')
+  return true
 end
 
 -- Heartbeat

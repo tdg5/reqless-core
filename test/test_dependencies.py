@@ -157,7 +157,7 @@ class TestDependencies(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.lua('queue.put', 2, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['a'])
-        self.lua('job.depends', 3, 'c', 'on', 'b')
+        self.lua('job.addDependency', 3, 'c', 'b')
         self.assertEqual(set(self.lua('job.get', 4, 'c')['dependencies']), set(['a', 'b']))
 
     def test_remove_dependency(self):
@@ -170,7 +170,7 @@ class TestDependencies(TestReqless):
         # Now, we'll remove dependences one at a time
         for jid in jids:
             self.assertEqual(self.lua('job.get', 100, 'jid')['state'], 'depends')
-            self.lua('job.depends', 100, 'jid', 'off', jid)
+            self.lua('job.removeDependency', 100, 'jid', jid)
         # With all of these dependencies cancelled, this job should be ready
         self.assertEqual(self.lua('job.get', 100, 'jid')['state'], 'waiting')
 
@@ -196,24 +196,24 @@ class TestDependencies(TestReqless):
         '''Cannot add or remove dependencies if the job is waiting'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'on', 'a')
+            self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'off', 'a')
+            self.lua, 'job.removeDependency', 0, 'jid', 'a')
 
     def test_depends_scheduled(self):
         '''Cannot add or remove dependencies if the job is scheduled'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'on', 'a')
+            self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'off', 'a')
+            self.lua, 'job.removeDependency', 0, 'jid', 'a')
 
     def test_depends_nonexistent(self):
         '''Cannot add or remove dependencies if the job doesn't exist'''
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'on', 'a')
+            self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'off', 'a')
+            self.lua, 'job.removeDependency', 0, 'jid', 'a')
 
     def test_depends_failed(self):
         '''Cannot add or remove dependencies if the job is failed'''
@@ -221,18 +221,18 @@ class TestDependencies(TestReqless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.fail', 1, 'jid', 'worker', 'group', 'message', {})
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'on', 'a')
+            self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'off', 'a')
+            self.lua, 'job.removeDependency', 0, 'jid', 'a')
 
     def test_depends_running(self):
         '''Cannot add or remove dependencies if the job is running'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'on', 'a')
+            self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
-            self.lua, 'job.depends', 0, 'jid', 'off', 'a')
+            self.lua, 'job.removeDependency', 0, 'jid', 'a')
 
     def test_depends_still_works(self):
         '''Deprecated depends API still works'''

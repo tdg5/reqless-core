@@ -29,6 +29,10 @@ ReqlessAPI['failureGroups.counts'] = function(now, start, limit)
   return cjson.encode(Reqless.failed(nil, start, limit))
 end
 
+ReqlessAPI['job.addDependency'] = function(now, jid, ...)
+  return Reqless.job(jid):depends(now, "on", unpack(arg))
+end
+
 ReqlessAPI['job.cancel'] = function(now, ...)
   return Reqless.cancel(now, unpack(arg))
 end
@@ -39,10 +43,6 @@ end
 
 ReqlessAPI['job.completeAndRequeue'] = function(now, jid, worker, queue, data, next_queue, ...)
   return Reqless.job(jid):complete(now, worker, queue, data, 'next', next_queue, unpack(arg))
-end
-
-ReqlessAPI['job.depends'] = function(now, jid, command, ...)
-  return Reqless.job(jid):depends(now, command, unpack(arg))
 end
 
 ReqlessAPI['job.fail'] = function(now, jid, worker, group, message, data)
@@ -93,6 +93,10 @@ ReqlessAPI['job.requeue'] = function(now, worker, queue, jid, ...)
   local job = Reqless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
   return ReqlessAPI['queue.put'](now, worker, queue, jid, unpack(arg))
+end
+
+ReqlessAPI['job.removeDependency'] = function(now, jid, ...)
+  return Reqless.job(jid):depends(now, "off", unpack(arg))
 end
 
 ReqlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
@@ -301,9 +305,14 @@ ReqlessAPI['complete'] = function(now, jid, worker, queue, data, ...)
   return Reqless.job(jid):complete(now, worker, queue, data, unpack(arg))
 end
 
--- Deprecated. Use job.depends instead.
+-- Deprecated. Use job.addDependency or job.removeDependency instead.
 ReqlessAPI['depends'] = function(now, jid, command, ...)
-  return ReqlessAPI['job.depends'](now, jid, command, unpack(arg))
+  if command == "on" then
+    return ReqlessAPI['job.addDependency'](now, jid, unpack(arg))
+  elseif command == "off" then
+    return ReqlessAPI['job.removeDependency'](now, jid, unpack(arg))
+  end
+  error('Depends(): Argument "command" must be "on" or "off"')
 end
 
 -- Deprecated. Use job.fail instead.
