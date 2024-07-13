@@ -33,6 +33,10 @@ ReqlessAPI['job.addDependency'] = function(now, jid, ...)
   return Reqless.job(jid):depends(now, "on", unpack(arg))
 end
 
+ReqlessAPI['job.addTag'] = function(now, jid, ...)
+  return cjson.encode(Reqless.tag(now, 'add', jid, unpack(arg)))
+end
+
 ReqlessAPI['job.cancel'] = function(now, ...)
   return Reqless.cancel(now, unpack(arg))
 end
@@ -103,10 +107,6 @@ ReqlessAPI['job.setPriority'] = function(now, jid, priority)
   return Reqless.job(jid):priority(priority)
 end
 
-ReqlessAPI['job.tag'] = function(now, jid, ...)
-  return cjson.encode(Reqless.tag(now, 'add', jid, unpack(arg)))
-end
-
 ReqlessAPI['job.timeout'] = function(now, ...)
   for _, jid in ipairs(arg) do
     Reqless.job(jid):timeout(now)
@@ -117,7 +117,7 @@ ReqlessAPI['job.track'] = function(now, jid)
   return cjson.encode(Reqless.track(now, 'track', jid))
 end
 
-ReqlessAPI['job.untag'] = function(now, jid, ...)
+ReqlessAPI['job.removeTag'] = function(now, jid, ...)
   return cjson.encode(Reqless.tag(now, 'remove', jid, unpack(arg)))
 end
 
@@ -434,13 +434,13 @@ ReqlessAPI['stats'] = function(now, queue, date)
   return ReqlessAPI['queue.stats'](now, queue, date)
 end
 
--- Deprecated. Use job.tag, job.untag, jobs.tagged, or tags.top instead.
+-- Deprecated. Use job.addTag, job.removeTag, jobs.tagged, or tags.top instead.
 ReqlessAPI['tag'] = function(now, command, ...)
   if command == 'add' then
-    return ReqlessAPI['job.tag'](now, unpack(arg))
+    return ReqlessAPI['job.addTag'](now, unpack(arg))
   end
   if command == 'remove' then
-    return ReqlessAPI['job.untag'](now, unpack(arg))
+    return ReqlessAPI['job.removeTag'](now, unpack(arg))
   end
   if command == 'get' then
     return ReqlessAPI['jobs.tagged'](now, unpack(arg))

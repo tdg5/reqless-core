@@ -12,8 +12,8 @@ class TestTag(TestReqless):
     def test_malformed(self):
         '''Enumerate all the ways it could be malformed'''
         self.assertMalformed(self.lua, [
-            ('job.tag', 0, 'add'),
-            ('job.untag', 0),
+            ('job.addTag', 0, 'add'),
+            ('job.removeTag', 0),
             ('jobs.tagged', 0),
             ('jobs.tagged', 0, 'foo', 'bar'),
             ('jobs.tagged', 0, 'foo', 0, 'bar'),
@@ -24,13 +24,13 @@ class TestTag(TestReqless):
     def test_add(self):
         '''Add a tag'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('job.tag', 0, 'jid', 'foo')
+        self.lua('job.addTag', 0, 'jid', 'foo')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], ['foo'])
 
     def test_remove(self):
         '''Remove a tag'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
-        self.lua('job.untag', 0, 'jid', 'foo')
+        self.lua('job.removeTag', 0, 'jid', 'foo')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], {})
 
     def test_tag_still_works(self):
@@ -49,19 +49,19 @@ class TestTag(TestReqless):
     def test_add_existing(self):
         '''We shouldn't double-add tags that already exist for the job'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
-        self.lua('job.tag', 0, 'jid', 'foo')
+        self.lua('job.addTag', 0, 'jid', 'foo')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], ['foo'])
 
     def test_remove_nonexistent(self):
         '''Removing a nonexistent tag from a job is ok'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])
-        self.lua('job.untag', 0, 'jid', 'bar')
+        self.lua('job.removeTag', 0, 'jid', 'bar')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], ['foo'])
 
     def test_add_multiple(self):
         '''Adding the same tag twice at the same time yields no duplicates'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('job.tag', 0, 'jid', 'foo', 'foo', 'foo')
+        self.lua('job.addTag', 0, 'jid', 'foo', 'foo', 'foo')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], ['foo'])
 
     def test_get(self):
@@ -82,7 +82,7 @@ class TestTag(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(
             self.lua('jobs.tagged', 0, 'foo', 0, 10)['jobs'], {})
-        self.lua('job.tag', 0, 'jid', 'foo')
+        self.lua('job.addTag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('jobs.tagged', 0, 'foo', 0, 10)['jobs'], ['jid'])
 
@@ -91,13 +91,13 @@ class TestTag(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         tags = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         for tag in tags:
-            self.lua('job.tag', 0, 'jid', tag)
+            self.lua('job.addTag', 0, 'jid', tag)
             found = self.lua('job.get', 0, 'jid')['tags']
             self.assertEqual(found, sorted(found))
         # And now remove them one at a time
         import random
         for tag in random.sample(tags, len(tags)):
-            self.lua('job.untag', 0, 'jid', tag)
+            self.lua('job.removeTag', 0, 'jid', tag)
             found = self.lua('job.get', 0, 'jid')['tags']
             self.assertEqual(list(found), sorted(found))
 
