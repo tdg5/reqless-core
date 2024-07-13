@@ -282,7 +282,7 @@ class TestRecurring(TestReqless):
         self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
-        self.lua('recurringJob.tag', 0, 'jid', 'foo')
+        self.lua('recurringJob.addTag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], ['foo'])
 
@@ -301,7 +301,7 @@ class TestRecurring(TestReqless):
             'interval', 60, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
-        self.lua('recurringJob.untag', 0, 'jid', 'foo')
+        self.lua('recurringJob.removeTag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], {})
 
