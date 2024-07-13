@@ -300,60 +300,7 @@ function Reqless.tag(now, command, ...)
   assert(command,
     'Tag(): Arg "command" must be "add", "remove", "get" or "top"')
 
-  if command == 'add' then
-    local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
-    local tags = redis.call('hget', ReqlessJob.ns .. jid, 'tags')
-    -- If the job has been canceled / deleted, then return false
-    if tags then
-      -- Decode the json blob, convert to dictionary
-      tags = cjson.decode(tags)
-      local _tags = {}
-      for _, v in ipairs(tags) do _tags[v] = true end
-
-      -- Otherwise, add the job to the sorted set with that tags
-      for i=2, #arg do
-        local tag = arg[i]
-        if _tags[tag] == nil then
-          _tags[tag] = true
-          table.insert(tags, tag)
-        end
-        Reqless.job(jid):insert_tag(now, tag)
-      end
-
-      redis.call('hset', ReqlessJob.ns .. jid, 'tags', cjson.encode(tags))
-      return tags
-    end
-
-    error('Tag(): Job ' .. jid .. ' does not exist')
-  elseif command == 'remove' then
-    local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
-    local tags = redis.call('hget', ReqlessJob.ns .. jid, 'tags')
-    -- If the job has been canceled / deleted, then return false
-    if tags then
-      -- Decode the json blob, convert to dictionary
-      tags = cjson.decode(tags)
-      local _tags = {}
-      for _, v in ipairs(tags) do _tags[v] = true end
-
-      -- Otherwise, remove the job from the sorted set with that tags
-      for i=2, #arg do
-        local tag = arg[i]
-        _tags[tag] = nil
-        Reqless.job(jid):remove_tag(tag)
-      end
-
-      local results = {}
-      for _, tag in ipairs(tags) do
-        if _tags[tag] then
-          table.insert(results, tag)
-        end
-      end
-
-      redis.call('hset', ReqlessJob.ns .. jid, 'tags', cjson.encode(results))
-      return results
-    end
-    error('Tag(): Job ' .. jid .. ' does not exist')
-  elseif command == 'get' then
+  if command == 'get' then
     local tag    = assert(arg[1], 'Tag(): Arg "tag" missing')
     local offset = assert(tonumber(arg[2] or 0),
       'Tag(): Arg "offset" not a number: ' .. tostring(arg[2]))
@@ -367,9 +314,53 @@ function Reqless.tag(now, command, ...)
     local offset = assert(tonumber(arg[1] or 0) , 'Tag(): Arg "offset" not a number: ' .. tostring(arg[1]))
     local count  = assert(tonumber(arg[2] or 25), 'Tag(): Arg "count" not a number: ' .. tostring(arg[2]))
     return redis.call('zrevrangebyscore', 'ql:tags', '+inf', 2, 'limit', offset, count)
+  elseif command ~= 'add' and command ~= 'remove' then
+    error('Tag(): First argument must be "add", "remove", "get", or "top"')
   end
 
-  error('Tag(): First argument must be "add", "remove" or "get"')
+  local jid  = assert(arg[1], 'Tag(): Arg "jid" missing')
+  local tags = redis.call('hget', ReqlessJob.ns .. jid, 'tags')
+  -- If the job has been canceled / deleted, raise an error
+  if not tags then
+    error('Tag(): Job ' .. jid .. ' does not exist')
+  end
+
+  -- Decode the json blob, convert to dictionary
+  tags = cjson.decode(tags)
+  local _tags = {}
+  for _, v in ipairs(tags) do _tags[v] = true end
+
+  if command == 'add' then
+    -- Add the job to the sorted set with that tags
+    for i=2, #arg do
+      local tag = arg[i]
+      if _tags[tag] == nil then
+        _tags[tag] = true
+        table.insert(tags, tag)
+      end
+      Reqless.job(jid):insert_tag(now, tag)
+    end
+
+    redis.call('hset', ReqlessJob.ns .. jid, 'tags', cjson.encode(tags))
+    return tags
+  end
+
+  -- Remove the job from the sorted set with that tags
+  for i=2, #arg do
+    local tag = arg[i]
+    _tags[tag] = nil
+    Reqless.job(jid):remove_tag(tag)
+  end
+
+  local results = {}
+  for _, tag in ipairs(tags) do
+    if _tags[tag] then
+      table.insert(results, tag)
+    end
+  end
+
+  redis.call('hset', ReqlessJob.ns .. jid, 'tags', cjson.encode(results))
+  return results
 end
 
 -- Cancel(...)
