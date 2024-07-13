@@ -85,10 +85,6 @@ ReqlessAPI['job.log'] = function(now, jid, message, data)
   job:history(now, message, data)
 end
 
-ReqlessAPI['job.priority'] = function(now, jid, priority)
-  return Reqless.job(jid):priority(priority)
-end
-
 ReqlessAPI['job.requeue'] = function(now, worker, queue, jid, ...)
   local job = Reqless.job(jid)
   assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
@@ -101,6 +97,10 @@ end
 
 ReqlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
   return Reqless.job(jid):retry(now, queue, worker, delay, group, message)
+end
+
+ReqlessAPI['job.setPriority'] = function(now, jid, priority)
+  return Reqless.job(jid):priority(priority)
 end
 
 ReqlessAPI['job.tag'] = function(now, jid, ...)
@@ -376,9 +376,9 @@ ReqlessAPI['pop'] = function(now, queue, worker, count)
   return ReqlessAPI['queue.pop'](now, queue, worker, count)
 end
 
--- Deprecated. Use job.priority instead.
+-- Deprecated. Use job.setPriority instead.
 ReqlessAPI['priority'] = function(now, jid, priority)
-  return ReqlessAPI['job.priority'](now, jid, priority)
+  return ReqlessAPI['job.setPriority'](now, jid, priority)
 end
 
 -- Deprecated. Use queue.pop instead.

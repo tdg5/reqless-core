@@ -620,7 +620,7 @@ class TestPeek(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'priority', 1)
         self.assertEqual(['b', 'a'],
             [j['jid'] for j in self.lua('queue.peek', 0, 'queue', 0, 100)])
-        self.lua('job.priority', 0, 'a', 2)
+        self.lua('job.setPriority', 0, 'a', 2)
         self.assertEqual(['a', 'b'],
             [j['jid'] for j in self.lua('queue.peek', 0, 'queue', 0, 100)])
 

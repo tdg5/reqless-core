@@ -6,11 +6,11 @@ from common import TestReqless
 class TestJob(TestReqless):
     '''Some general jobby things'''
     def test_malformed(self):
-        '''Enumerate all malformed input to job.priority'''
+        '''Enumerate all malformed input to job.setPriority'''
         self.assertMalformed(self.lua, [
-            ('job.priority', '0'),
-            ('job.priority', '0', 'jid'),
-            ('job.priority', '0', 'jid', 'foo')
+            ('job.setPriority', '0'),
+            ('job.setPriority', '0', 'jid'),
+            ('job.setPriority', '0', 'jid', 'foo')
         ])
 
     def test_log(self):
