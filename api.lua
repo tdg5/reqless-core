@@ -89,18 +89,18 @@ ReqlessAPI['job.log'] = function(now, jid, message, data)
   job:history(now, message, data)
 end
 
-ReqlessAPI['job.requeue'] = function(now, worker, queue, jid, ...)
-  local job = Reqless.job(jid)
-  assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
-  return ReqlessAPI['queue.put'](now, worker, queue, jid, unpack(arg))
-end
-
 ReqlessAPI['job.removeDependency'] = function(now, jid, ...)
   return Reqless.job(jid):depends(now, "off", unpack(arg))
 end
 
 ReqlessAPI['job.removeTag'] = function(now, jid, ...)
   return cjson.encode(Reqless.tag(now, 'remove', jid, unpack(arg)))
+end
+
+ReqlessAPI['job.requeue'] = function(now, worker, queue, jid, klass, data, delay, ...)
+  local job = Reqless.job(jid)
+  assert(job:exists(), 'Requeue(): Job ' .. jid .. ' does not exist')
+  return ReqlessAPI['queue.put'](now, worker, queue, jid, klass, data, delay, unpack(arg))
 end
 
 ReqlessAPI['job.retry'] = function(now, jid, queue, worker, delay, group, message)
