@@ -298,15 +298,19 @@ class TestTimeout(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 1)
         self.lua('job.timeout', 0, 'jid')
-        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'stalled')
+        job = self.lua('job.get', 0, 'jid')
+        self.assertEqual(job['state'], 'stalled')
+        self.assertEqual(job['worker'], '')
 
     '''Deprecated timeout API still works'''
-    def test_timeout_running(self):
-        '''You can timeout running jobs'''
+    def test_timeout_still_works(self):
+        '''Deprecated timeout API still works'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 1)
         self.lua('timeout', 0, 'jid')
-        self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'stalled')
+        job = self.lua('job.get', 0, 'jid')
+        self.assertEqual(job['state'], 'stalled')
+        self.assertEqual(job['worker'], '')
 
 class TestCancel(TestReqless):
     '''Canceling jobs'''

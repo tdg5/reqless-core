@@ -698,7 +698,7 @@ function ReqlessJob:timeout(now)
 
   queue.work.add(now, math.huge, self.jid)
   redis.call('hmset', ReqlessJob.ns .. self.jid,
-    'state', 'stalled', 'expires', 0)
+    'state', 'stalled', 'expires', 0, 'worker', '')
   local encoded = cjson.encode({
     jid = self.jid,
     event = 'lock_lost',
