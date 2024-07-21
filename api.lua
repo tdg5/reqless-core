@@ -17,7 +17,7 @@ ReqlessAPI['config.getAll'] = function(now)
 end
 
 ReqlessAPI['config.set'] = function(now, key, value)
-  return Reqless.config.set(key, value)
+  Reqless.config.set(key, value)
 end
 
 -- Unset a configuration option
