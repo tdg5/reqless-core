@@ -142,12 +142,12 @@ class TestWorker(TestReqless):
         workers = list(map(str, range(10)))
         for worker in workers:
             self.lua('queue.pop', 1, 'queue', worker, 1)
-        # And we'll unregister them each one at a time and ensure they are
+        # And we'll forget them each one at a time and ensure they are
         # indeed removed from our list
         for worker in workers:
             found = [w['name'] for w in self.lua('workers.list', 2)]
             self.assertTrue(worker in found)
-            self.lua('worker.unregister', 2, worker)
+            self.lua('worker.forget', 2, worker)
             found = [w['name'] for w in self.lua('workers.list', 2)]
             self.assertFalse(worker in found)
 
@@ -181,7 +181,7 @@ class TestWorker(TestReqless):
         # When we check on workers in a little while, it won't be listed
         self.assertEqual(self.lua('workers.list', 3600), {})
 
-    def test_unregistered(self):
+    def test_forgotten(self):
         '''If a worker is unknown, it should still be ok'''
         self.assertEqual(self.lua('worker.counts', 3600, 'worker'), {
             'jobs': {},

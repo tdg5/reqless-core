@@ -282,7 +282,7 @@ ReqlessAPI['worker.counts'] = function(now, worker)
   return cjson.encode(ReqlessWorker.counts(now, worker))
 end
 
-ReqlessAPI['worker.unregister'] = function(now, ...)
+ReqlessAPI['worker.forget'] = function(now, ...)
   return ReqlessWorker.deregister(unpack(arg))
 end
 
@@ -484,9 +484,9 @@ ReqlessAPI['unrecur'] = function(now, jid)
   return ReqlessAPI['recurringJob.unrecur'](now, jid)
 end
 
--- Deprecated. Use worker.unregister instead.
+-- Deprecated. Use worker.forget instead.
 ReqlessAPI['worker.deregister'] = function(now, ...)
-  return ReqlessAPI['worker.unregister'](now, unpack(arg))
+  return ReqlessAPI['worker.forget'](now, unpack(arg))
 end
 
 -- Deprecated. Use worker.counts or workers.list instead
