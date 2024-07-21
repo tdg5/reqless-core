@@ -158,7 +158,7 @@ ReqlessAPI['queue.length'] = function(now, queue)
 end
 
 ReqlessAPI['queue.pause'] = function(now, ...)
-  return ReqlessQueue.pause(now, unpack(arg))
+  ReqlessQueue.pause(now, unpack(arg))
 end
 
 ReqlessAPI['queue.peek'] = function(now, queue, offset, count)
@@ -207,7 +207,7 @@ ReqlessAPI['queue.unfail'] = function(now, queue, group, count)
 end
 
 ReqlessAPI['queue.unpause'] = function(now, ...)
-  return ReqlessQueue.unpause(unpack(arg))
+  ReqlessQueue.unpause(unpack(arg))
 end
 
 ReqlessAPI['queues.list'] = function(now)
