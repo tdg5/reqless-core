@@ -736,10 +736,10 @@ end
 
 -- Recur a job of type klass in this queue
 function ReqlessQueue:recurAtInterval(now, jid, klass, raw_data, interval, offset, ...)
-  assert(jid  , 'RecurringJob On(): Arg "jid" missing')
-  assert(klass, 'RecurringJob On(): Arg "klass" missing')
+  assert(jid  , 'Recur(): Arg "jid" missing')
+  assert(klass, 'Recur(): Arg "klass" missing')
   local data = assert(cjson.decode(raw_data),
-    'RecurringJob On(): Arg "data" not JSON: ' .. tostring(raw_data))
+    'Recur(): Arg "data" not JSON: ' .. tostring(raw_data))
 
   local interval = assert(tonumber(interval),
     'Recur(): Arg "interval" not a number: ' .. tostring(interval))
@@ -752,7 +752,7 @@ function ReqlessQueue:recurAtInterval(now, jid, klass, raw_data, interval, offse
   -- Read in all the optional parameters. All of these must come in
   -- pairs, so if we have an odd number of extra args, raise an error
   if #arg % 2 == 1 then
-    error('Odd number of additional args: ' .. tostring(arg))
+    error('Recur(): Odd number of additional args: ' .. tostring(arg))
   end
 
   -- Read in all the optional parameters
