@@ -183,8 +183,8 @@ ReqlessAPI['queue.put'] = function(now, worker, queue, jid, klass, data, delay, 
   return Reqless.queue(queue):put(now, worker, jid, klass, data, delay, unpack(arg))
 end
 
-ReqlessAPI['queue.recur'] = function(now, queue, jid, klass, data, spec, ...)
-  return Reqless.queue(queue):recur(now, jid, klass, data, spec, unpack(arg))
+ReqlessAPI['queue.recurAtInterval'] = function(now, queue, jid, klass, data, interval, offset, ...)
+  return Reqless.queue(queue):recurAtInterval(now, jid, klass, data, interval, offset, unpack(arg))
 end
 
 ReqlessAPI['queue.stats'] = function(now, queue, date)
@@ -396,7 +396,13 @@ end
 
 -- Deprecated. Use queue.recur instead.
 ReqlessAPI['recur'] = function(now, queue, jid, klass, data, spec, ...)
-  return ReqlessAPI['queue.recur'](now, queue, jid, klass, data, spec, unpack(arg))
+  -- At some point in the future, we may have different types of recurring
+  -- jobs, but for the time being, we only have 'interval'-type jobs
+  if spec == 'interval' then
+    return Reqless.queue(queue):recurAtInterval(now, jid, klass, data, unpack(arg))
+  end
+
+  error('Recur(): schedule type "' .. tostring(spec) .. '" unknown')
 end
 
 -- Deprecated. Use recurringJob.get instead.

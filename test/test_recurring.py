@@ -8,36 +8,26 @@ class TestRecurring(TestReqless):
     def test_malformed(self):
         '''Enumerate all the malformed possibilities'''
         self.assertMalformed(self.lua, [
-            ('queue.recur', 0),
-            ('queue.recur', 0, 'queue'),
-            ('queue.recur', 0, 'queue', 'jid'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', '[}'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'foo'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 'foo'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 'foo'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'tags'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'tags', '[}'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'priority'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'priority', 'foo'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'retries'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'retries', 'foo'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'backlog'),
-            ('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
-                'backlog', 'foo'),
+            ('queue.recurAtInterval', 0),
+            ('queue.recurAtInterval', 0, 'queue'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', '[}'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 'foo'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 'foo'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags', '[}'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'priority'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'priority', 'foo'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'retries'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'retries', 'foo'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'backlog'),
+            ('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'backlog', 'foo'),
         ])
 
         # In order for these tests to work, there must be a job
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertMalformed(self.lua, [
             ('recurringJob.update', 0, 'jid', 'priority'),
             ('recurringJob.update', 0, 'jid', 'priority', 'foo'),
@@ -55,7 +45,7 @@ class TestRecurring(TestReqless):
 
     def test_basic(self):
         '''Simple recurring jobs'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         # Pop off the first recurring job
         popped = self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.assertEqual(len(popped), 1)
@@ -89,7 +79,7 @@ class TestRecurring(TestReqless):
 
     def test_offset(self):
         '''We can set an offset from now for jobs to recur on'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 10)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 10)
         # There shouldn't be any jobs available just yet
         popped = self.lua('queue.pop', 9, 'queue', 'worker', 10)
         self.assertEqual(len(popped), 0)
@@ -106,7 +96,7 @@ class TestRecurring(TestReqless):
 
     def test_tags(self):
         '''Recurring jobs can be given tags'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0,
             'tags', ['foo', 'bar'])
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         self.assertEqual(job['tags'], ['foo', 'bar'])
@@ -115,8 +105,7 @@ class TestRecurring(TestReqless):
         '''Recurring jobs can be given priority'''
         # Put one job with low priority
         self.lua('queue.put', 0, 'worker', 'queue', 'low', 'klass', {}, 0, 'priority', 0)
-        self.lua('queue.recur', 0, 'queue', 'high', 'klass', {},
-            'interval', 60, 0, 'priority', 10)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'high', 'klass', {}, 60, 0, 'priority', 10)
         jobs = self.lua('queue.pop', 0, 'queue', 'worker', 10)
         # We should see high-1 and then low
         self.assertEqual(len(jobs), 2)
@@ -126,23 +115,21 @@ class TestRecurring(TestReqless):
 
     def test_retries(self):
         '''Recurring job retries are passed on to child jobs'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
-            'interval', 60, 0, 'retries', 2)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'retries', 2)
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         self.assertEqual(job['retries'], 2)
         self.assertEqual(job['remaining'], 2)
 
     def test_backlog(self):
         '''Recurring jobs can limit the number of jobs they spawn'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
-            'interval', 60, 0, 'backlog', 1)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'backlog', 1)
         jobs = self.lua('queue.pop', 600, 'queue', 'worker', 10)
         self.assertEqual(len(jobs), 2)
         self.assertEqual(jobs[0]['jid'], 'jid-1')
 
     def test_get(self):
         '''We should be able to get recurring jobs'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(self.lua('recurringJob.get', 0, 'jid'), {
             'backlog': 0,
             'count': 0,
@@ -160,7 +147,7 @@ class TestRecurring(TestReqless):
 
     def test_recur_dot_get_still_works(self):
         '''Deprecated recur.get API still works'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(self.lua('recur.get', 0, 'jid'), {
             'backlog': 0,
             'count': 0,
@@ -178,7 +165,7 @@ class TestRecurring(TestReqless):
 
     def test_update_priority(self):
         '''We need to be able to update recurring job attributes'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['priority'], 0)
         self.lua('recurringJob.update', 0, 'jid', 'priority', 10)
@@ -187,15 +174,14 @@ class TestRecurring(TestReqless):
 
     def test_update_interval(self):
         '''We need to be able to update the interval'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
         self.lua('recurringJob.update', 0, 'jid', 'interval', 10)
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 6)
 
     def test_update_retries(self):
         '''We need to be able to update the retries'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
-            'interval', 60, 0, 'retries', 5)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'retries', 5)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['retries'], 5)
         self.lua('recurringJob.update', 0, 'jid', 'retries', 2)
@@ -204,7 +190,7 @@ class TestRecurring(TestReqless):
 
     def test_update_data(self):
         '''We need to be able to update the data'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60,  0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60,  0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['data'], '{}')
         self.lua('recurringJob.update', 0, 'jid', 'data', {'foo': 'bar'})
@@ -213,7 +199,7 @@ class TestRecurring(TestReqless):
 
     def test_recur_dot_update_still_works(self):
         '''Deprecated recur.update API still works'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60,  0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60,  0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['data'], '{}')
         self.lua('recur.update', 0, 'jid', 'data', {'foo': 'bar'})
@@ -222,7 +208,7 @@ class TestRecurring(TestReqless):
 
     def test_update_klass(self):
         '''We need to be able to update klass'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['klass'], 'klass')
         self.lua('recurringJob.update', 0, 'jid', 'klass', 'class')
@@ -231,7 +217,7 @@ class TestRecurring(TestReqless):
 
     def test_update_queue(self):
         '''Need to be able to move the recurring job to another queue'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
         self.lua('recurringJob.update', 0, 'jid', 'queue', 'other')
         # No longer available in the old queue
@@ -244,7 +230,7 @@ class TestRecurring(TestReqless):
     def test_update_throttles(self):
         '''We need to be able to update the throttles'''
         queue_name = 'queue'
-        self.lua('queue.recur', 0, queue_name, 'jid', 'klass', {}, 'interval', 60,  0)
+        self.lua('queue.recurAtInterval', 0, queue_name, 'jid', 'klass', {}, 60,  0)
         self.assertEqual(
             self.lua('queue.pop', 0, queue_name, 'worker', 10)[0]['throttles'], [f'ql:q:{queue_name}'])
         self.lua('recurringJob.update', 0, 'jid', 'throttles', ['throttle'])
@@ -253,33 +239,33 @@ class TestRecurring(TestReqless):
 
     def test_unrecur(self):
         '''Stop a recurring job'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
         self.lua('recurringJob.unrecur', 0, 'jid')
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
 
     def test_unrecur_still_works(self):
         '''Deprecated unrecur API still works'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
         self.lua('unrecur', 0, 'jid')
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
 
     def test_empty_array_data(self):
         '''Empty array of data is preserved'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', [], 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', [], 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['data'], '[]')
 
     def test_multiple(self):
         '''If multiple intervals have passed, then returns multiple jobs'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             len(self.lua('queue.pop', 599, 'queue', 'worker', 10)), 10)
 
     def test_tag(self):
         '''We should be able to add tags to jobs'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
         self.lua('recurringJob.addTag', 0, 'jid', 'foo')
@@ -288,7 +274,7 @@ class TestRecurring(TestReqless):
 
     def test_recur_dot_tag_still_works(self):
         '''Deprecated recur.tag API still works'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
         self.lua('recur.tag', 0, 'jid', 'foo')
@@ -297,8 +283,7 @@ class TestRecurring(TestReqless):
 
     def test_untag(self):
         '''We should be able to remove tags from a job'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
-            'interval', 60, 0, 'tags', ['foo'])
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
         self.lua('recurringJob.removeTag', 0, 'jid', 'foo')
@@ -307,8 +292,7 @@ class TestRecurring(TestReqless):
 
     def test_untag_still_works(self):
         '''Deprecated untag API still works'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {},
-            'interval', 60, 0, 'tags', ['foo'])
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
         self.lua('recur.untag', 0, 'jid', 'foo')
@@ -317,17 +301,17 @@ class TestRecurring(TestReqless):
 
     def test_rerecur(self):
         '''Don't reset the jid counter when re-recurring a job'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['jid'], 'jid-1')
         # Re-recur it
-        self.lua('queue.recur', 60, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 60, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['jid'], 'jid-2')
 
     def test_rerecur_attributes(self):
         '''Re-recurring a job updates its attributes'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0,
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0,
             'priority', 10, 'tags', ['foo'], 'retries', 2)
         self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10)[0], {
             'data': '{}',
@@ -349,8 +333,8 @@ class TestRecurring(TestReqless):
             'throttles': ['ql:q:queue'],
             'worker': 'worker',
             'spawned_from_jid': 'jid'})
-        self.lua('queue.recur', 60, 'queue', 'jid', 'class', {'foo': 'bar'},
-            'interval', 10, 0, 'priority', 5, 'tags', ['bar'], 'retries', 5, 'throttles', ['lala'])
+        self.lua('queue.recurAtInterval', 60, 'queue', 'jid', 'class', {'foo': 'bar'},
+            10, 0, 'priority', 5, 'tags', ['bar'], 'retries', 5, 'throttles', ['lala'])
         self.assertEqual(self.lua('queue.pop', 60, 'queue', 'worker', 10)[0], {
             'data': '{"foo": "bar"}',
             'dependencies': {},
@@ -374,16 +358,16 @@ class TestRecurring(TestReqless):
 
     def test_rerecur_move(self):
         '''Re-recurring a job in a new queue works like a move'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['jid'], 'jid-1')
-        self.lua('queue.recur', 60, 'other', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 60, 'other', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(
             self.lua('queue.pop', 60, 'other', 'worker', 10)[0]['jid'], 'jid-2')
 
     def test_history(self):
         '''Spawned jobs are 'put' at the time they would have been scheduled'''
-        self.lua('queue.recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
+        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         jobs = self.lua('queue.pop', 599, 'queue', 'worker', 100)
         times = [job['history'][0]['when'] for job in jobs]
         self.assertEqual(
