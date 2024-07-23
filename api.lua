@@ -394,7 +394,7 @@ ReqlessAPI['queues'] = function(now, queue)
   return ReqlessAPI['queues.list'](now)
 end
 
--- Deprecated. Use queue.recur instead.
+-- Deprecated. Use queue.recurAtInterval instead.
 ReqlessAPI['recur'] = function(now, queue, jid, klass, data, spec, ...)
   -- At some point in the future, we may have different types of recurring
   -- jobs, but for the time being, we only have 'interval'-type jobs
