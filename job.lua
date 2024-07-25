@@ -127,15 +127,11 @@ function ReqlessJob:complete(now, worker, queue_name, raw_data, ...)
 
   self:throttles_release(now)
 
-  ----------------------------------------------------------
-  -- This is the massive stats update that we have to do
-  ----------------------------------------------------------
-  -- This is how long we've been waiting to get popped
-  -- local waiting = math.floor(now) - history[#history]['popped']
-  local time = tonumber(
+  -- Calculate how long the job has been running.
+  local popped_time = tonumber(
     redis.call('hget', ReqlessJob.ns .. self.jid, 'time') or now)
-  local waiting = now - time
-  queue:stat(now, 'run', waiting)
+  local run_time = now - popped_time
+  queue:stat(now, 'run', run_time)
   redis.call('hset', ReqlessJob.ns .. self.jid,
     'time', string.format("%.20f", now))
 
