@@ -27,18 +27,18 @@ class TestThrottle(TestReqless):
   '''Test retrieving throttle data'''
   def test_get(self):
     self.redis.hmset('ql:th:tid', {'id': 'tid', 'maximum' : 5})
-    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 5})
+    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 5, 'ttl': -1})
 
   '''Test retrieving uninitiailized throttle data'''
-  def test_get(self):
-    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 0})
+  def test_get_uninitialized(self):
+      self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 0, 'ttl': -2})
 
   '''Test deleting the throttle data'''
   def test_delete(self):
     self.lua('throttle.set', 0, 'tid', 5)
-    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 5})
+    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 5, 'ttl': -1})
     self.lua('throttle.delete', 0, 'tid')
-    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 0})
+    self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 0, 'ttl': -2})
 
   '''Test release properly removes the jid from the throttle'''
   def test_release(self):

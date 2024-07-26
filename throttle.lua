@@ -16,6 +16,13 @@ function ReqlessThrottle:data()
   return data
 end
 
+-- Like data, but includes ttl.
+function ReqlessThrottle:dataWithTtl()
+  local data = self:data()
+  data.ttl = self:ttl()
+  return data
+end
+
 -- Set the data for a throttled resource
 function ReqlessThrottle:set(data, expiration)
   redis.call('hmset', ReqlessThrottle.ns .. self.id, 'id', self.id, 'maximum', data.maximum)

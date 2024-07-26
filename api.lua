@@ -192,7 +192,7 @@ ReqlessAPI['queue.stats'] = function(now, queue, date)
 end
 
 ReqlessAPI['queue.throttle.get'] = function(now, queue)
-  local data = Reqless.throttle(ReqlessQueue.ns .. queue):data()
+  local data = throttle:dataWithTtl()
   if data then
     return cjson.encode(data)
   end
@@ -246,7 +246,7 @@ ReqlessAPI['throttle.delete'] = function(now, tid)
 end
 
 ReqlessAPI['throttle.get'] = function(now, tid)
-  return cjson.encode(Reqless.throttle(tid):data())
+  return cjson.encode(Reqless.throttle(tid):dataWithTtl())
 end
 
 ReqlessAPI['throttle.locks'] = function(now, tid)
@@ -272,10 +272,6 @@ ReqlessAPI['throttle.set'] = function(now, tid, max, ...)
     maximum = max
   }
   Reqless.throttle(tid):set(data, tonumber(expiration or 0))
-end
-
-ReqlessAPI['throttle.ttl'] = function(now, tid)
-  return Reqless.throttle(tid):ttl()
 end
 
 ReqlessAPI['worker.counts'] = function(now, worker)
@@ -455,6 +451,11 @@ ReqlessAPI['tag'] = function(now, command, ...)
     return ReqlessAPI['tags.top'](now, unpack(arg))
   end
   error('Tag(): Unknown command ' .. command)
+end
+
+-- Deprecated. Use throttle.get instead.
+ReqlessAPI['throttle.ttl'] = function(now, tid)
+  return Reqless.throttle(tid):ttl()
 end
 
 -- Deprecated. Use job.timeout instead.
