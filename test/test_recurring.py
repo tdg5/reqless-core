@@ -237,11 +237,11 @@ class TestRecurring(TestReqless):
         self.assertEqual(self.lua(
             'queue.pop', 60, queue_name, 'worker', 10)[0]['throttles'], ['throttle'])
 
-    def test_unrecur(self):
+    def test_cancel(self):
         '''Stop a recurring job'''
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
-        self.lua('recurringJob.unrecur', 0, 'jid')
+        self.lua('recurringJob.cancel', 0, 'jid')
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
 
     def test_unrecur_still_works(self):

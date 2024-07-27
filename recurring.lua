@@ -165,7 +165,7 @@ function ReqlessRecurringJob:untag(...)
 end
 
 -- Stop further occurrences of this job
-function ReqlessRecurringJob:unrecur()
+function ReqlessRecurringJob:cancel()
   -- First, find out what queue it was attached to
   local queue = redis.call('hget', 'ql:r:' .. self.jid, 'queue')
   if queue then

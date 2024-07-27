@@ -212,6 +212,10 @@ ReqlessAPI['queues.counts'] = function(now)
   return cjson.encode(ReqlessQueue.counts(now, nil))
 end
 
+ReqlessAPI['recurringJob.cancel'] = function(now, jid)
+  return Reqless.recurring(jid):cancel()
+end
+
 ReqlessAPI['recurringJob.get'] = function(now, jid)
   local data = Reqless.recurring(jid):data()
   if data then
@@ -225,10 +229,6 @@ end
 
 ReqlessAPI['recurringJob.removeTag'] = function(now, jid, ...)
   return Reqless.recurring(jid):untag(unpack(arg))
-end
-
-ReqlessAPI['recurringJob.unrecur'] = function(now, jid)
-  return Reqless.recurring(jid):unrecur()
 end
 
 ReqlessAPI['recurringJob.update'] = function(now, jid, ...)
@@ -484,9 +484,9 @@ ReqlessAPI['unpause'] = function(now, ...)
   ReqlessAPI['queue.unpause'](now, unpack(arg))
 end
 
--- Deprecated. Use recurringJob.unrecur instead.
+-- Deprecated. Use recurringJob.cancel instead.
 ReqlessAPI['unrecur'] = function(now, jid)
-  return ReqlessAPI['recurringJob.unrecur'](now, jid)
+  return ReqlessAPI['recurringJob.cancel'](now, jid)
 end
 
 -- Deprecated. Use worker.forget instead.
