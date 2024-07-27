@@ -192,10 +192,7 @@ ReqlessAPI['queue.stats'] = function(now, queue, date)
 end
 
 ReqlessAPI['queue.throttle.get'] = function(now, queue)
-  local data = throttle:dataWithTtl()
-  if data then
-    return cjson.encode(data)
-  end
+  return ReqlessAPI['throttle.get'](now, ReqlessQueue.ns .. queue)
 end
 
 ReqlessAPI['queue.throttle.set'] = function(now, queue, max)
