@@ -193,7 +193,7 @@ class TestQueue(TestReqless):
         self.lua('queue.put', 2, 'worker', 'queue', 'jid2', 'klass', {}, 0)
         self.lua('queue.pop', 3, 'queue', 'worker', 10)
         self.assertEqual(self.lua('queue.counts', 4, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 5), [expected])
+        self.assertEqual(self.lua('queues.counts', 5), [expected])
 
     def test_waiting(self):
         '''Discern waiting job counts correctly'''
@@ -201,7 +201,7 @@ class TestQueue(TestReqless):
         expected['waiting'] = 1
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_running(self):
         '''Discern running job counts correctly'''
@@ -210,7 +210,7 @@ class TestQueue(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_depends(self):
         '''Discern dependent job counts correctly'''
@@ -220,7 +220,7 @@ class TestQueue(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'depends', ['a'])
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_scheduled(self):
         '''Discern scheduled job counts correctly'''
@@ -228,7 +228,7 @@ class TestQueue(TestReqless):
         expected['scheduled'] = 1
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_recurring(self):
         '''Discern recurring job counts correctly'''
@@ -236,7 +236,7 @@ class TestQueue(TestReqless):
         expected['recurring'] = 1
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_recurring_offset(self):
         '''Discern future recurring job counts correctly'''
@@ -244,7 +244,7 @@ class TestQueue(TestReqless):
         expected['recurring'] = 1
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 10)
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
     def test_pause(self):
         '''Can pause and unpause a queue'''
@@ -258,7 +258,7 @@ class TestQueue(TestReqless):
         expected['paused'] = True
         expected['waiting'] = 10
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
         # Once unpaused, we should be able to pop jobs off
         self.lua('queue.unpause', 0, 'queue')
@@ -272,7 +272,7 @@ class TestQueue(TestReqless):
         expected = dict(self.expected)
         expected['name'] = 'another'
         expected['waiting'] = 1
-        self.assertEqual(self.lua('queues.list', 0), [expected, self.expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected, self.expected])
 
     def test_recurring_move(self):
         '''When moving a recurring job, it should add the queue to queues'''
@@ -281,7 +281,7 @@ class TestQueue(TestReqless):
         expected['recurring'] = 1
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
         self.lua('recurringJob.update', 0, 'jid', 'queue', 'another')
-        self.assertEqual(self.lua('queues.list', 0), [expected, self.expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected, self.expected])
 
     def test_scheduled_waiting(self):
         '''When checking counts, jobs that /were/ scheduled can be waiting'''
@@ -289,7 +289,7 @@ class TestQueue(TestReqless):
         expected['waiting'] = 1
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
         self.assertEqual(self.lua('queue.counts', 20, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 20), [expected])
+        self.assertEqual(self.lua('queues.counts', 20), [expected])
 
     def test_queues_still_works(self):
         '''Deprecated queues API still works'''
@@ -311,7 +311,7 @@ class TestQueue(TestReqless):
         expected['paused'] = True
         expected['waiting'] = 10
         self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.list', 0), [expected])
+        self.assertEqual(self.lua('queues.counts', 0), [expected])
 
         # Once unpaused, we should be able to pop jobs off
         self.lua('unpause', 0, 'queue')

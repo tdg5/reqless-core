@@ -207,7 +207,7 @@ ReqlessAPI['queue.unpause'] = function(now, ...)
   ReqlessQueue.unpause(unpack(arg))
 end
 
-ReqlessAPI['queues.list'] = function(now)
+ReqlessAPI['queues.counts'] = function(now)
   return cjson.encode(ReqlessQueue.counts(now, nil))
 end
 
@@ -279,7 +279,7 @@ ReqlessAPI['worker.forget'] = function(now, ...)
   return ReqlessWorker.deregister(unpack(arg))
 end
 
-ReqlessAPI['workers.list'] = function(now)
+ReqlessAPI['workers.counts'] = function(now)
   return cjson.encode(ReqlessWorker.counts(now, nil))
 end
 
@@ -379,12 +379,12 @@ ReqlessAPI['put'] = function(now, worker, queue, jid, klass, data, delay, ...)
   return ReqlessAPI['queue.put'](now, worker, queue, jid, klass, data, delay, unpack(arg))
 end
 
--- Deprecated. Use queue.counts or queues.list instead.
+-- Deprecated. Use queue.counts or queues.counts instead.
 ReqlessAPI['queues'] = function(now, queue)
   if queue then
     return ReqlessAPI['queue.counts'](now, queue)
   end
-  return ReqlessAPI['queues.list'](now)
+  return ReqlessAPI['queues.counts'](now)
 end
 
 -- Deprecated. Use queue.recurAtInterval instead.
@@ -493,12 +493,12 @@ ReqlessAPI['worker.deregister'] = function(now, ...)
   return ReqlessAPI['worker.forget'](now, unpack(arg))
 end
 
--- Deprecated. Use worker.counts or workers.list instead
+-- Deprecated. Use worker.counts or workers.counts instead
 ReqlessAPI['workers'] = function(now, worker)
   if worker then
     return ReqlessAPI['worker.counts'](now, worker)
   end
-  return ReqlessAPI['workers.list'](now)
+  return ReqlessAPI['workers.counts'](now)
 end
 
 -------------------------------------------------------------------------------

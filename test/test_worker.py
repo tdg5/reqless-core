@@ -18,7 +18,7 @@ class TestWorker(TestReqless):
             'jobs': ['jid'],
             'stalled': {}
         })
-        self.assertEqual(self.lua('workers.list', 2), [{
+        self.assertEqual(self.lua('workers.counts', 2), [{
             'name': 'worker',
             'jobs': 1,
             'stalled': 0
@@ -34,7 +34,7 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': ['jid']
         })
-        self.assertEqual(self.lua('workers.list', expires), [{
+        self.assertEqual(self.lua('workers.counts', expires), [{
             'name': 'worker',
             'jobs': 0,
             'stalled': 1
@@ -71,7 +71,7 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': {}
         })
-        self.assertEqual(self.lua('workers.list', 4), [{
+        self.assertEqual(self.lua('workers.counts', 4), [{
             'name': 'worker',
             'jobs': 0,
             'stalled': 0
@@ -90,7 +90,7 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': {}
         })
-        self.assertEqual(self.lua('workers.list', 4), [{
+        self.assertEqual(self.lua('workers.counts', 4), [{
             'name': 'worker',
             'jobs': 0,
             'stalled': 0
@@ -109,7 +109,7 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': {}
         })
-        self.assertEqual(self.lua('workers.list', 4), [{
+        self.assertEqual(self.lua('workers.counts', 4), [{
             'name': 'worker',
             'jobs': 0,
             'stalled': 0
@@ -128,7 +128,7 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': {}
         })
-        self.assertEqual(self.lua('workers.list', 4), [{
+        self.assertEqual(self.lua('workers.counts', 4), [{
             'name': 'worker',
             'jobs': 0,
             'stalled': 0
@@ -145,10 +145,10 @@ class TestWorker(TestReqless):
         # And we'll forget them each one at a time and ensure they are
         # indeed removed from our list
         for worker in workers:
-            found = [w['name'] for w in self.lua('workers.list', 2)]
+            found = [w['name'] for w in self.lua('workers.counts', 2)]
             self.assertTrue(worker in found)
             self.lua('worker.forget', 2, worker)
-            found = [w['name'] for w in self.lua('workers.list', 2)]
+            found = [w['name'] for w in self.lua('workers.counts', 2)]
             self.assertFalse(worker in found)
 
     def test_worker_deregister_still_works(self):
@@ -165,10 +165,10 @@ class TestWorker(TestReqless):
         # indeed removed from our list
         self.assertEqual(count, len(list(workers)))
         for worker in workers:
-            found = [w['name'] for w in self.lua('workers.list', 2)]
+            found = [w['name'] for w in self.lua('workers.counts', 2)]
             self.assertTrue(worker in found)
             self.lua('worker.deregister', 2, worker)
-            found = [w['name'] for w in self.lua('workers.list', 2)]
+            found = [w['name'] for w in self.lua('workers.counts', 2)]
             self.assertFalse(worker in found)
 
     def test_expiration(self):
@@ -179,7 +179,7 @@ class TestWorker(TestReqless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         # When we check on workers in a little while, it won't be listed
-        self.assertEqual(self.lua('workers.list', 3600), {})
+        self.assertEqual(self.lua('workers.counts', 3600), {})
 
     def test_forgotten(self):
         '''If a worker is unknown, it should still be ok'''
