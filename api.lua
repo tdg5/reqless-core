@@ -200,6 +200,7 @@ ReqlessAPI['queue.throttle.set'] = function(now, queue, max)
 end
 
 ReqlessAPI['queue.unfail'] = function(now, queue, group, count)
+  assert(queue, 'queue.unfail(): Arg "queue" missing')
   return Reqless.queue(queue):unfail(now, group, count)
 end
 
