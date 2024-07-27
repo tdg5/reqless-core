@@ -480,7 +480,7 @@ end
 
 -- Deprecated. Use queue.unpause instead.
 ReqlessAPI['unpause'] = function(now, ...)
-  return ReqlessAPI['queue.unpause'](now, unpack(arg))
+  ReqlessAPI['queue.unpause'](now, unpack(arg))
 end
 
 -- Deprecated. Use recurringJob.unrecur instead.
