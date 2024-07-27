@@ -203,6 +203,16 @@ class TestFailed(TestReqless):
 
 class TestUnfailed(TestReqless):
     '''Test access to unfailed'''
+
+    def test_malformed(self):
+        '''Enumerate all the malformed cases'''
+        self.assertMalformed(self.lua, [
+            ('job.unfail', 0),
+            ('job.unfail', 0, "jid"),
+            ('job.unfail', 0, "jid", "group", -1),
+            ('job.unfail', 0, "jid", "group", 0),
+        ])
+
     def test_basic(self):
         '''We can unfail in a basic way'''
         jids = map(str, range(10))

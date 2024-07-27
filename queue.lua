@@ -706,6 +706,7 @@ function ReqlessQueue:unfail(now, group, count)
   assert(group, 'Unfail(): Arg "group" missing')
   count = assert(tonumber(count or 25),
     'Unfail(): Arg "count" not a number: ' .. tostring(count))
+  assert(count > 0, 'Unfail(): Arg "count" must be greater than zero')
 
   -- Get up to that many jobs, and we'll put them in the appropriate queue
   local jids = redis.call('lrange', 'ql:f:' .. group, -count, -1)
