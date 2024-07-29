@@ -235,8 +235,8 @@ ReqlessAPI['recurringJob.update'] = function(now, jid, ...)
   return Reqless.recurring(jid):update(now, unpack(arg))
 end
 
-ReqlessAPI['tags.top'] = function(now, ...)
-  return cjson.encode(Reqless.tag(now, 'top', unpack(arg)))
+ReqlessAPI['tags.top'] = function(now, offset, limit)
+  return cjson.encode(Reqless.tag(now, 'top', offset, limit))
 end
 
 ReqlessAPI['throttle.delete'] = function(now, tid)
