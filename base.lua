@@ -168,10 +168,10 @@ function Reqless.failed(group, start, limit)
   return response
 end
 
--- Jobs(now, 'complete', [offset, [count]])
+-- Jobs(now, 'complete', [offset, [limit]])
 -- Jobs(now, (
 --          'stalled' | 'running' | 'scheduled' | 'depends', 'recurring'
---      ), queue, [offset, [count]])
+--      ), queue, [offset, [limit]])
 -------------------------------------------------------------------------------
 -- Return all the job ids currently considered to be in the provided state
 -- in a particular queue. The response is a list of job ids:
@@ -186,32 +186,32 @@ function Reqless.jobs(now, state, ...)
   if state == 'complete' then
     local offset = assert(tonumber(arg[1] or 0),
       'Jobs(): Arg "offset" not a number: ' .. tostring(arg[1]))
-    local count  = assert(tonumber(arg[2] or 25),
-      'Jobs(): Arg "count" not a number: ' .. tostring(arg[2]))
+    local limit  = assert(tonumber(arg[2] or 25),
+      'Jobs(): Arg "limit" not a number: ' .. tostring(arg[2]))
     return redis.call('zrevrange', 'ql:completed', offset,
-      offset + count - 1)
+      offset + limit - 1)
   end
 
   local queue_name  = assert(arg[1], 'Jobs(): Arg "queue" missing')
   local offset = assert(tonumber(arg[2] or 0),
     'Jobs(): Arg "offset" not a number: ' .. tostring(arg[2]))
-  local count  = assert(tonumber(arg[3] or 25),
-    'Jobs(): Arg "count" not a number: ' .. tostring(arg[3]))
+  local limit  = assert(tonumber(arg[3] or 25),
+    'Jobs(): Arg "limit" not a number: ' .. tostring(arg[3]))
 
   local queue = Reqless.queue(queue_name)
   if state == 'running' then
-    return queue.locks.peek(now, offset, count)
+    return queue.locks.peek(now, offset, limit)
   elseif state == 'stalled' then
-    return queue.locks.expired(now, offset, count)
+    return queue.locks.expired(now, offset, limit)
   elseif state == 'throttled' then
-    return queue.throttled.peek(now, offset, count)
+    return queue.throttled.peek(now, offset, limit)
   elseif state == 'scheduled' then
     queue:check_scheduled(now, queue.scheduled.length())
-    return queue.scheduled.peek(now, offset, count)
+    return queue.scheduled.peek(now, offset, limit)
   elseif state == 'depends' then
-    return queue.depends.peek(now, offset, count)
+    return queue.depends.peek(now, offset, limit)
   elseif state == 'recurring' then
-    return queue.recurring.peek(math.huge, offset, count)
+    return queue.recurring.peek(math.huge, offset, limit)
   end
 
   error('Jobs(): Unknown type "' .. state .. '"')
@@ -274,13 +274,13 @@ function Reqless.track(now, command, jid)
 end
 
 -- tag(now, ('add' | 'remove'), jid, tag, [tag, ...])
--- tag(now, 'get', tag, [offset, [count]])
--- tag(now, 'top', [offset, [count]])
+-- tag(now, 'get', tag, [offset, [limit]])
+-- tag(now, 'top', [offset, [limit]])
 -- -----------------------------------------------------------------------------
 -- Accepts a jid, 'add' or 'remove', and then a list of tags
 -- to either add or remove from the job. Alternatively, 'get',
 -- a tag to get jobs associated with that tag, and offset and
--- count
+-- limit
 --
 -- If 'add' or 'remove', the response is a list of the jobs
 -- current tags, or False if the job doesn't exist. If 'get',
@@ -304,16 +304,16 @@ function Reqless.tag(now, command, ...)
     local tag    = assert(arg[1], 'Tag(): Arg "tag" missing')
     local offset = assert(tonumber(arg[2] or 0),
       'Tag(): Arg "offset" not a number: ' .. tostring(arg[2]))
-    local count  = assert(tonumber(arg[3] or 25),
-      'Tag(): Arg "count" not a number: ' .. tostring(arg[3]))
+    local limit  = assert(tonumber(arg[3] or 25),
+      'Tag(): Arg "limit" not a number: ' .. tostring(arg[3]))
     return {
       total = redis.call('zcard', 'ql:t:' .. tag),
-      jobs  = redis.call('zrange', 'ql:t:' .. tag, offset, offset + count - 1)
+      jobs  = redis.call('zrange', 'ql:t:' .. tag, offset, offset + limit - 1)
     }
   elseif command == 'top' then
     local offset = assert(tonumber(arg[1] or 0) , 'Tag(): Arg "offset" not a number: ' .. tostring(arg[1]))
-    local count  = assert(tonumber(arg[2] or 25), 'Tag(): Arg "count" not a number: ' .. tostring(arg[2]))
-    return redis.call('zrevrangebyscore', 'ql:tags', '+inf', 2, 'limit', offset, count)
+    local limit  = assert(tonumber(arg[2] or 25), 'Tag(): Arg "limit" not a number: ' .. tostring(arg[2]))
+    return redis.call('zrevrangebyscore', 'ql:tags', '+inf', 2, 'limit', offset, limit)
   elseif command ~= 'add' and command ~= 'remove' then
     error('Tag(): First argument must be "add", "remove", "get", or "top"')
   end

@@ -94,6 +94,7 @@ function ReqlessRecurringJob:update(now, ...)
       error('Recur(): Unrecognized option "' .. key .. '"')
     end
   end
+
   return true
 end
 

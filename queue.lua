@@ -10,11 +10,11 @@ function Reqless.queue(name)
 
   -- Access to our work
   queue.work = {
-    peek = function(offset, count)
-      if count <= 0 then
+    peek = function(offset, limit)
+      if limit <= 0 then
         return {}
       end
-      return redis.call('zrevrange', queue:prefix('work'), offset, offset + count - 1)
+      return redis.call('zrevrange', queue:prefix('work'), offset, offset + limit - 1)
     end, remove = function(...)
       if #arg > 0 then
         return redis.call('zrem', queue:prefix('work'), unpack(arg))
@@ -31,12 +31,12 @@ function Reqless.queue(name)
 
   -- Access to our locks
   queue.locks = {
-    expired = function(now, offset, count)
+    expired = function(now, offset, limit)
       return redis.call('zrangebyscore',
-        queue:prefix('locks'), -math.huge, now, 'LIMIT', offset, count)
-    end, peek = function(now, offset, count)
+        queue:prefix('locks'), -math.huge, now, 'LIMIT', offset, limit)
+    end, peek = function(now, offset, limit)
       return redis.call('zrangebyscore', queue:prefix('locks'),
-        now, math.huge, 'LIMIT', offset, count)
+        now, math.huge, 'LIMIT', offset, limit)
     end, add = function(expires, jid)
       redis.call('zadd', queue:prefix('locks'), expires, jid)
     end, remove = function(...)
@@ -58,9 +58,9 @@ function Reqless.queue(name)
 
   -- Access to our dependent jobs
   queue.depends = {
-    peek = function(now, offset, count)
+    peek = function(now, offset, limit)
       return redis.call('zrange',
-        queue:prefix('depends'), offset, offset + count - 1)
+        queue:prefix('depends'), offset, offset + limit - 1)
     end, add = function(now, jid)
       redis.call('zadd', queue:prefix('depends'), now, jid)
     end, remove = function(...)
@@ -77,8 +77,8 @@ function Reqless.queue(name)
   queue.throttled = {
     length = function()
       return (redis.call('zcard', queue:prefix('throttled')) or 0)
-    end, peek = function(now, offset, count)
-      return redis.call('zrange', queue:prefix('throttled'), offset, offset + count - 1)
+    end, peek = function(now, offset, limit)
+      return redis.call('zrange', queue:prefix('throttled'), offset, offset + limit - 1)
     end, add = function(...)
       if #arg > 0 then
         redis.call('zadd', queue:prefix('throttled'), unpack(arg))
@@ -94,12 +94,12 @@ function Reqless.queue(name)
 
   -- Access to our scheduled jobs
   queue.scheduled = {
-    peek = function(now, offset, count)
+    peek = function(now, offset, limit)
       return redis.call('zrange',
-        queue:prefix('scheduled'), offset, offset + count - 1)
-    end, ready = function(now, offset, count)
+        queue:prefix('scheduled'), offset, offset + limit - 1)
+    end, ready = function(now, offset, limit)
       return redis.call('zrangebyscore',
-        queue:prefix('scheduled'), 0, now, 'LIMIT', offset, count)
+        queue:prefix('scheduled'), 0, now, 'LIMIT', offset, limit)
     end, add = function(when, jid)
       redis.call('zadd', queue:prefix('scheduled'), when, jid)
     end, remove = function(...)
@@ -113,10 +113,10 @@ function Reqless.queue(name)
 
   -- Access to our recurring jobs
   queue.recurring = {
-    peek = function(now, offset, count)
+    peek = function(now, offset, limit)
       return redis.call('zrangebyscore', queue:prefix('recur'),
-        0, now, 'LIMIT', offset, count)
-    end, ready = function(now, offset, count)
+        0, now, 'LIMIT', offset, limit)
+    end, ready = function(now, offset, limit)
     end, add = function(when, jid)
       redis.call('zadd', queue:prefix('recur'), when, jid)
     end, remove = function(...)
@@ -237,26 +237,26 @@ end
 -------
 -- Examine the next jobs that would be popped from the queue without actually
 -- popping them.
-function ReqlessQueue:peek(now, offset, count)
+function ReqlessQueue:peek(now, offset, limit)
   offset = assert(tonumber(offset),
     'Peek(): Arg "offset" missing or not a number: ' .. tostring(offset))
 
-  count = assert(tonumber(count),
-    'Peek(): Arg "count" missing or not a number: ' .. tostring(count))
+  limit = assert(tonumber(limit),
+    'Peek(): Arg "limit" missing or not a number: ' .. tostring(limit))
 
-  if count <= 0 then
+  if limit <= 0 then
     return {}
   end
 
-  local count_with_offset = offset + count
+  local offset_with_limit = offset + limit
 
   -- These are the ids that we're going to return. We'll begin with any jobs
   -- that have lost their locks
-  local jids = self.locks.expired(now, 0, count_with_offset)
+  local jids = self.locks.expired(now, 0, offset_with_limit)
 
   -- Since we can't just peek the range we want, we have to consider all offset
-  -- + count jobs before we can take the relevant range.
-  local remaining_capacity = count_with_offset - #jids
+  -- + limit jobs before we can take the relevant range.
+  local remaining_capacity = offset_with_limit - #jids
 
   -- If we still need jobs in order to meet demand, then we should
   -- look for all the recurring jobs that need jobs run
@@ -273,7 +273,7 @@ function ReqlessQueue:peek(now, offset, count)
   if offset > #jids then
     -- Offset takes us past the expired jids, so just return straight from the
     -- work queue
-    return self.work.peek(offset - #jids, count)
+    return self.work.peek(offset - #jids, limit)
   end
 
   -- Return a mix of expired jids and prioritized items from the work queue
@@ -283,7 +283,7 @@ function ReqlessQueue:peek(now, offset, count)
     return {}
   end
 
-  return {unpack(jids, offset + 1, count_with_offset)}
+  return {unpack(jids, offset + 1, offset_with_limit)}
 end
 
 -- Return true if this queue is paused
@@ -309,10 +309,10 @@ end
 
 -- Checks for expired locks, scheduled and recurring jobs, returning any
 -- jobs that are ready to be processes
-function ReqlessQueue:pop(now, worker, count)
+function ReqlessQueue:pop(now, worker, limit)
   assert(worker, 'Pop(): Arg "worker" missing')
-  count = assert(tonumber(count),
-    'Pop(): Arg "count" missing or not a number: ' .. tostring(count))
+  limit = assert(tonumber(limit),
+    'Pop(): Arg "limit" missing or not a number: ' .. tostring(limit))
 
   -- If this queue is paused, then return no jobs
   if self:paused() then
@@ -322,7 +322,7 @@ function ReqlessQueue:pop(now, worker, count)
   -- Make sure we this worker to the list of seen workers
   redis.call('zadd', 'ql:workers', now, worker)
 
-  local dead_jids = self:invalidate_locks(now, count) or {}
+  local dead_jids = self:invalidate_locks(now, limit) or {}
   local popped = {}
 
   for _, jid in ipairs(dead_jids) do
@@ -343,13 +343,13 @@ function ReqlessQueue:pop(now, worker, count)
 
   -- If we still need jobs in order to meet demand, then we should
   -- look for all the recurring jobs that need jobs run
-  self:check_recurring(now, count - #dead_jids)
+  self:check_recurring(now, limit - #dead_jids)
 
   -- If we still need values in order to meet the demand, then we
   -- should check if any scheduled items, and if so, we should
   -- insert them to ensure correctness when pulling off the next
   -- unit of work.
-  self:check_scheduled(now, count - #dead_jids)
+  self:check_scheduled(now, limit - #dead_jids)
 
   -- With these in place, we can expand this list of jids based on the work
   -- queue itself and the priorities therein
@@ -362,10 +362,10 @@ function ReqlessQueue:pop(now, worker, count)
   )
 
   -- Keep trying to fulfill fulfill jobs from the work queue until we reach
-  -- the desired count or exhaust our retry limit
-  while #popped < count and pop_retry_limit > 0 do
+  -- the desired limit or exhaust our retry limit
+  while #popped < limit and pop_retry_limit > 0 do
 
-    local jids = self.work.peek(0, count - #popped) or {}
+    local jids = self.work.peek(0, limit - #popped) or {}
 
     -- If there is nothing in the work queue, then no need to keep looping
     if #jids == 0 then

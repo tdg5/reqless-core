@@ -161,8 +161,8 @@ ReqlessAPI['queue.pause'] = function(now, ...)
   ReqlessQueue.pause(now, unpack(arg))
 end
 
-ReqlessAPI['queue.peek'] = function(now, queue, offset, count)
-  local jids = Reqless.queue(queue):peek(now, offset, count)
+ReqlessAPI['queue.peek'] = function(now, queue, offset, limit)
+  local jids = Reqless.queue(queue):peek(now, offset, limit)
   local response = {}
   for _, jid in ipairs(jids) do
     table.insert(response, Reqless.job(jid):data())
@@ -170,8 +170,8 @@ ReqlessAPI['queue.peek'] = function(now, queue, offset, count)
   return cjson.encode(response)
 end
 
-ReqlessAPI['queue.pop'] = function(now, queue, worker, count)
-  local jids = Reqless.queue(queue):pop(now, worker, count)
+ReqlessAPI['queue.pop'] = function(now, queue, worker, limit)
+  local jids = Reqless.queue(queue):pop(now, worker, limit)
   local response = {}
   for _, jid in ipairs(jids) do
     table.insert(response, Reqless.job(jid):data())
@@ -199,9 +199,9 @@ ReqlessAPI['queue.throttle.set'] = function(now, queue, max)
   Reqless.throttle(ReqlessQueue.ns .. queue):set({maximum = max}, 0)
 end
 
-ReqlessAPI['queue.unfail'] = function(now, queue, group, count)
+ReqlessAPI['queue.unfail'] = function(now, queue, group, limit)
   assert(queue, 'queue.unfail(): Arg "queue" missing')
-  return Reqless.queue(queue):unfail(now, group, count)
+  return Reqless.queue(queue):unfail(now, group, limit)
 end
 
 ReqlessAPI['queue.unpause'] = function(now, ...)
@@ -361,13 +361,13 @@ ReqlessAPI['pause'] = function(now, ...)
 end
 
 -- Deprecated. Use queue.peek instead.
-ReqlessAPI['peek'] = function(now, queue, offset, count)
-  return ReqlessAPI['queue.peek'](now, queue, offset, count)
+ReqlessAPI['peek'] = function(now, queue, offset, limit)
+  return ReqlessAPI['queue.peek'](now, queue, offset, limit)
 end
 
 -- Deprecated. Use queue.pop instead.
-ReqlessAPI['pop'] = function(now, queue, worker, count)
-  return ReqlessAPI['queue.pop'](now, queue, worker, count)
+ReqlessAPI['pop'] = function(now, queue, worker, limit)
+  return ReqlessAPI['queue.pop'](now, queue, worker, limit)
 end
 
 -- Deprecated. Use job.setPriority instead.
@@ -475,8 +475,8 @@ ReqlessAPI['track'] = function(now, command, jid)
 end
 
 -- Deprecated. Use queue.unfail instead.
-ReqlessAPI['unfail'] = function(now, queue, group, count)
-  return ReqlessAPI['queue.unfail'](now, queue, group, count)
+ReqlessAPI['unfail'] = function(now, queue, group, limit)
+  return ReqlessAPI['queue.unfail'](now, queue, group, limit)
 end
 
 -- Deprecated. Use queue.unpause instead.
