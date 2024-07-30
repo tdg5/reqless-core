@@ -240,7 +240,7 @@ ReqlessAPI['tags.top'] = function(now, offset, limit)
 end
 
 ReqlessAPI['throttle.delete'] = function(now, tid)
-  return Reqless.throttle(tid):unset()
+  Reqless.throttle(tid):unset()
 end
 
 ReqlessAPI['throttle.get'] = function(now, tid)
