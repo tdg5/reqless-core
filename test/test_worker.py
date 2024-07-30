@@ -179,7 +179,7 @@ class TestWorker(TestReqless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.complete', 0, 'jid', 'worker', 'queue', {})
         # When we check on workers in a little while, it won't be listed
-        self.assertEqual(self.lua('workers.counts', 3600), {})
+        self.assertEqual(self.lua('workers.counts', 3600), [])
 
     def test_forgotten(self):
         '''If a worker is unknown, it should still be ok'''

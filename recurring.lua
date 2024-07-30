@@ -120,7 +120,7 @@ function ReqlessRecurringJob:tag(...)
     end
   end
 
-  tags = cjson.encode(tags)
+  tags = cjsonArrayDegenerationWorkaround(tags)
   redis.call('hset', 'ql:r:' .. self.jid, 'tags', tags)
 
   return tags

@@ -187,7 +187,7 @@ class TestDependencies(TestReqless):
         self.lua('queue.pop', 7, 'queue', 'worker', 10)
         self.lua('job.complete', 8, 'a', 'worker', 'queue', {})
         # We should not see the job unlocked
-        self.assertEqual(self.lua('queue.pop', 9, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 9, 'queue', 'worker', 10), [])
         self.lua('job.complete', 10, 'b', 'worker', 'queue', {})
         self.assertEqual(
             self.lua('queue.pop', 9, 'queue', 'worker', 10)[0]['jid'], 'c')

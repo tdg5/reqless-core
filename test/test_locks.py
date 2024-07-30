@@ -36,7 +36,7 @@ class TestLocks(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         job = self.lua('queue.pop', 1, 'queue', 'worker', 10)[0]
         # No jobs should be available since the lock is still valid
-        self.assertEqual(self.lua('queue.pop', 2, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 2, 'queue', 'worker', 10), [])
         self.assertEqual(self.lua(
             'queue.pop', job['expires'] + 10, 'queue', 'another', 10), [{
                 'data': '{}',
@@ -71,7 +71,7 @@ class TestLocks(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         job = self.lua('queue.pop', 1, 'queue', 'worker', 10)[0]
         # No jobs should be available since the lock is still valid
-        self.assertEqual(self.lua('queue.pop', 2, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 2, 'queue', 'worker', 10), [])
         # We should see our expiration update after a heartbeat
         self.assertTrue(
             self.lua('job.heartbeat', 3, 'jid', 'worker', {}) > job['expires'])
@@ -152,7 +152,7 @@ class TestRetries(TestReqless):
         '''Can move a job even if it's failed retries'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), [])
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'failed')
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'waiting')
@@ -285,7 +285,7 @@ class TestRetry(TestReqless):
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.retry', 0, 'jid', 'queue', 'worker', 10)
         # Now it should be considered scheduled
-        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), [])
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'scheduled')
 
     def test_retry_wrong_queue(self):
@@ -377,10 +377,10 @@ class TestGracePeriod(TestReqless):
         # Now, we'll lose the lock, but we should only get a warning, and not
         # actually have the job handed off to another yet
         expires = job['expires'] + 10
-        self.assertEqual(self.lua('queue.pop', expires, 'queue', 'another', 10), {})
+        self.assertEqual(self.lua('queue.pop', expires, 'queue', 'another', 10), [])
         # However, once the grace period passes, we should be fine
         self.assertNotEqual(
-            self.lua('queue.pop', expires + self.grace, 'queue', 'another', 10), {})
+            self.lua('queue.pop', expires + self.grace, 'queue', 'another', 10), [])
 
     def test_repeated(self):
         '''Grace periods should be given for each lock lost, not just first'''
@@ -391,7 +391,7 @@ class TestGracePeriod(TestReqless):
             # not actually have the job handed off to another yet
             expires = job['expires'] + 10
             self.assertEqual(
-                self.lua('queue.pop', expires, 'queue', 'worker', 10), {})
+                self.lua('queue.pop', expires, 'queue', 'worker', 10), [])
             # However, once the grace period passes, we should be fine
             job = self.lua(
                 'queue.pop', expires + self.grace, 'queue', 'worker', 10)[0]
@@ -406,4 +406,4 @@ class TestGracePeriod(TestReqless):
         self.lua('job.fail', expires, 'jid', 'worker', 'foo', 'bar', {})
         # And make sure that no job is available after the grace period
         self.assertEqual(
-            self.lua('queue.pop', expires + self.grace, 'queue', 'worker', 10), {})
+            self.lua('queue.pop', expires + self.grace, 'queue', 'worker', 10), [])

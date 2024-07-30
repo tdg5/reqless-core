@@ -34,7 +34,8 @@ ReqlessAPI['job.addDependency'] = function(now, jid, ...)
 end
 
 ReqlessAPI['job.addTag'] = function(now, jid, ...)
-  return cjson.encode(Reqless.tag(now, 'add', jid, unpack(arg)))
+  local result = Reqless.tag(now, 'add', jid, unpack(arg))
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['job.cancel'] = function(now, ...)
@@ -68,7 +69,7 @@ ReqlessAPI['job.getMulti'] = function(now, ...)
   for _, jid in ipairs(arg) do
     table.insert(results, Reqless.job(jid):data())
   end
-  return cjson.encode(results)
+  return cjsonArrayDegenerationWorkaround(results)
 end
 
 ReqlessAPI['job.heartbeat'] = function(now, jid, worker, data)
@@ -94,7 +95,8 @@ ReqlessAPI['job.removeDependency'] = function(now, jid, ...)
 end
 
 ReqlessAPI['job.removeTag'] = function(now, jid, ...)
-  return cjson.encode(Reqless.tag(now, 'remove', jid, unpack(arg)))
+  local result = Reqless.tag(now, 'remove', jid, unpack(arg))
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['job.requeue'] = function(now, worker, queue, jid, klass, data, delay, ...)
@@ -126,7 +128,8 @@ ReqlessAPI['job.untrack'] = function(now, jid)
 end
 
 ReqlessAPI["jobs.completed"] = function(now, offset, limit)
-  return Reqless.jobs(now, 'complete', offset, limit)
+  local result = Reqless.jobs(now, 'complete', offset, limit)
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['jobs.failedByGroup'] = function(now, group, start, limit)
@@ -150,7 +153,8 @@ ReqlessAPI['queue.forget'] = function(now, ...)
 end
 
 ReqlessAPI["queue.jobsByState"] = function(now, state, ...)
-  return Reqless.jobs(now, state, unpack(arg))
+  local result = Reqless.jobs(now, state, unpack(arg))
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['queue.length'] = function(now, queue)
@@ -167,7 +171,7 @@ ReqlessAPI['queue.peek'] = function(now, queue, offset, limit)
   for _, jid in ipairs(jids) do
     table.insert(response, Reqless.job(jid):data())
   end
-  return cjson.encode(response)
+  return cjsonArrayDegenerationWorkaround(response)
 end
 
 ReqlessAPI['queue.pop'] = function(now, queue, worker, limit)
@@ -176,7 +180,7 @@ ReqlessAPI['queue.pop'] = function(now, queue, worker, limit)
   for _, jid in ipairs(jids) do
     table.insert(response, Reqless.job(jid):data())
   end
-  return cjson.encode(response)
+  return cjsonArrayDegenerationWorkaround(response)
 end
 
 ReqlessAPI['queue.put'] = function(now, worker, queue, jid, klass, data, delay, ...)
@@ -209,7 +213,7 @@ ReqlessAPI['queue.unpause'] = function(now, ...)
 end
 
 ReqlessAPI['queues.counts'] = function(now)
-  return cjson.encode(ReqlessQueue.counts(now, nil))
+  return cjsonArrayDegenerationWorkaround(ReqlessQueue.counts(now, nil))
 end
 
 ReqlessAPI['recurringJob.cancel'] = function(now, jid)
@@ -236,7 +240,8 @@ ReqlessAPI['recurringJob.update'] = function(now, jid, ...)
 end
 
 ReqlessAPI['tags.top'] = function(now, offset, limit)
-  return cjson.encode(Reqless.tag(now, 'top', offset, limit))
+  local result = Reqless.tag(now, 'top', offset, limit)
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['throttle.delete'] = function(now, tid)
@@ -248,11 +253,13 @@ ReqlessAPI['throttle.get'] = function(now, tid)
 end
 
 ReqlessAPI['throttle.locks'] = function(now, tid)
-  return Reqless.throttle(tid).locks.members()
+  local result = Reqless.throttle(tid).locks.members()
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 ReqlessAPI['throttle.pending'] = function(now, tid)
-  return Reqless.throttle(tid).pending.members()
+  local result = Reqless.throttle(tid).pending.members()
+  return cjsonArrayDegenerationWorkaround(result)
 end
 
 -- releases the set of jids from the specified throttle.
@@ -281,7 +288,7 @@ ReqlessAPI['worker.forget'] = function(now, ...)
 end
 
 ReqlessAPI['workers.counts'] = function(now)
-  return cjson.encode(ReqlessWorker.counts(now, nil))
+  return cjsonArrayDegenerationWorkaround(ReqlessWorker.counts(now, nil))
 end
 
 -------------------------------------------------------------------------------

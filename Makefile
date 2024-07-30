@@ -1,9 +1,9 @@
 all: reqless.lua reqless-lib.lua
 
-reqless-lib.lua: base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua
+reqless-lib.lua: util.lua base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua
 	echo "-- Current SHA: `git rev-parse HEAD`" > reqless-lib.lua
 	echo "-- This is a generated file" >> reqless-lib.lua
-	cat base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua >> reqless-lib.lua
+	cat util.lua base.lua config.lua job.lua queue.lua recurring.lua worker.lua throttle.lua >> reqless-lib.lua
 
 reqless.lua: reqless-lib.lua api.lua
 	# Cat these files out, but remove all the comments from the source

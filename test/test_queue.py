@@ -400,7 +400,7 @@ class TestPut(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 1)
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'scheduled')
         # After the delay, we should be able to pop
-        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), [])
         self.assertEqual(len(self.lua('queue.pop', 2, 'queue', 'worker', 10)), 1)
 
     def test_put_retries(self):
@@ -512,7 +512,7 @@ class TestPeek(TestReqless):
     def test_basic(self):
         '''Can peek at a single waiting job'''
         # No jobs for an empty queue
-        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), [])
         self.lua('queue.put', 0, 'worker', 'foo', 'jid', 'klass', {}, 0)
         # And now we should see a single job
         self.assertEqual(self.lua('queue.peek', 1, 'foo', 0, 10), [{
@@ -547,7 +547,7 @@ class TestPeek(TestReqless):
         self.lua('config.set', 0, 'heartbeat', 0)
 
         queue_name = 'peek_with_offset_and_count'
-        self.assertEqual(self.lua('queue.peek', 0, queue_name, 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 0, queue_name, 0, 10), [])
         now = 0
         for index in range(0, 20):
             now += 1
@@ -606,7 +606,7 @@ class TestPeek(TestReqless):
         '''When we move a job, it should be visible in the new, not old'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'other', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('queue.peek', 1, 'queue', 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 1, 'queue', 0, 10), [])
         self.assertEqual(self.lua('queue.peek', 1, 'other', 0, 10)[0]['jid'], 'jid')
 
     def test_recurring(self):
@@ -637,7 +637,7 @@ class TestPeek(TestReqless):
     def test_peek_still_works(self):
         '''Deprecated peek API still works'''
         # No jobs for an empty queue
-        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), {})
+        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), [])
         self.lua('queue.put', 0, 'worker', 'foo', 'jid', 'klass', {}, 0)
         # And now we should see a single job
         self.assertEqual(self.lua('queue.peek', 1, 'foo', 0, 10), [{
@@ -683,7 +683,7 @@ class TestPop(TestReqless):
     def test_basic(self):
         '''Pop some jobs in a simple way'''
         # If the queue is empty, you get no jobs
-        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 0, 'queue', 'worker', 10), [])
         # With job put, we can get one back
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.assertEqual(self.lua('queue.pop', 1, 'queue', 'worker', 1), [{
@@ -756,7 +756,7 @@ class TestPop(TestReqless):
         '''When we move a job, it should be visible in the new, not old'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.put', 0, 'worker', 'other', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('queue.pop', 1, 'queue', 'worker', 10), {})
+        self.assertEqual(self.lua('queue.pop', 1, 'queue', 'worker', 10), [])
         self.assertEqual(self.lua('queue.pop', 1, 'other', 'worker', 10)[0]['jid'], 'jid')
 
     def test_max_concurrency(self):
@@ -802,8 +802,8 @@ class TestPop(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
         self.lua('queue.pop', 2, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'a'])
-        self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), [b'b'])
+        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), ['a'])
+        self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), ['b'])
         self.lua('job.fail', 5, 'a', 'worker', 'group', 'message', {})
         job = self.lua('queue.pop', 6, 'queue', 'worker', 10)[0]
         self.assertEqual(job['jid'], 'b')
@@ -814,8 +814,8 @@ class TestPop(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid1', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'jid2', 'klass', {}, 0)
         self.lua('queue.pop', 2, 'queue', 'worker', 2)
-        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
-        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), ['jid1'])
+        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), ['jid2'])
 
     def test_throttled_removed(self):
         '''Throttled jobs are removed from throttled when concurrency available'''
@@ -823,17 +823,17 @@ class TestPop(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid1', 'klass', {}, 0)
         self.lua('queue.put', 1, 'worker', 'queue', 'jid2', 'klass', {}, 0)
         self.lua('queue.pop', 2, 'queue', 'worker', 2)
-        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
-        self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), [b'jid2'])
-        self.assertEqual(self.lua('queue.jobsByState', 5, 'throttled', 'queue'), [b'jid2'])
-        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), [b'jid1'])
+        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), ['jid1'])
+        self.assertEqual(self.lua('throttle.pending', 4, 'ql:q:queue'), ['jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'throttled', 'queue'), ['jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), ['jid1'])
         self.lua('job.complete', 7, 'jid1', 'worker', 'queue', {})
         self.assertEqual(self.lua('queue.jobsByState', 8, 'throttled', 'queue'), [])
         self.lua('queue.pop', 10, 'queue', 'worker', 1)
-        self.assertEqual(self.lua('throttle.locks',11, 'ql:q:queue'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.locks',11, 'ql:q:queue'), ['jid2'])
         self.assertEqual(self.lua('throttle.pending', 12, 'ql:q:queue'), [])
         self.assertEqual(self.lua('queue.jobsByState', 13, 'throttled', 'queue'), [])
-        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('queue.jobsByState', 5, 'running', 'queue'), ['jid2'])
 
     def test_throttled_additional_put(self):
         '''put should attempt to throttle the job immediately'''
@@ -841,8 +841,8 @@ class TestPop(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid1', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 1)
         self.lua('queue.put', 2, 'worker', 'queue', 'jid2', 'klass', {}, 0)
-        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), [b'jid1'])
-        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.locks', 3, 'ql:q:queue'), ['jid1'])
+        self.assertEqual(self.lua('queue.jobsByState', 4, 'throttled', 'queue'), ['jid2'])
 
     def test_pop_no_retry(self):
         '''Pop is not retried when limit unset'''
@@ -856,9 +856,9 @@ class TestPop(TestReqless):
 
         jobs = self.lua('queue.pop', 4, 'queue', 'worker', 2)
         self.assertEqual(['jid1'], [job['jid'] for job in jobs])
-        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
+        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), ['jid1'])
         self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [])
-        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), ['jid2'])
         waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid3', 'jid4'])
 
@@ -875,9 +875,9 @@ class TestPop(TestReqless):
 
         jobs = self.lua('queue.pop', 4, 'queue', 'worker', 2)
         self.assertEqual(['jid1', 'jid3'], [job['jid'] for job in jobs])
-        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
-        self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [b'jid3'])
-        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), ['jid1'])
+        self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), ['jid3'])
+        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), ['jid2'])
         waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid4'])
 
@@ -895,9 +895,9 @@ class TestPop(TestReqless):
 
         jobs = self.lua('queue.pop', 4, 'queue', 'worker', 2)
         self.assertEqual(['jid1', 'jid3'], [job['jid'] for job in jobs])
-        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
-        self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [b'jid3'])
-        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2'])
+        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), ['jid1'])
+        self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), ['jid3'])
+        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), ['jid2'])
 
     def test_pop_retry_upto_limit(self):
         '''Pop is retried up to limit when jobs get throttled'''
@@ -912,8 +912,8 @@ class TestPop(TestReqless):
 
         jobs = self.lua('queue.pop', 4, 'queue', 'worker', 2)
         self.assertEqual(['jid1'], [job['jid'] for job in jobs])
-        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), [b'jid1'])
+        self.assertEqual(self.lua('throttle.locks', 5, 'tid1'), ['jid1'])
         self.assertEqual(self.lua('throttle.locks', 6, 'tid2'), [])
-        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), [b'jid2', b'jid3'])
+        self.assertEqual(self.lua('throttle.pending', 7, 'tid1'), ['jid2', 'jid3'])
         waiting_jobs = self.lua('queue.peek', 8, 'queue', 0, 99)
         self.assertEqual([job['jid'] for job in waiting_jobs], ['jid4'])

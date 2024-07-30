@@ -118,7 +118,7 @@ class TestEvents(TestReqless):
         job = self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]
         with self.lua:
             self.assertEqual(self.lua(
-                'queue.pop', job['expires'] + 10, 'queue', 'worker', 10), {})
+                'queue.pop', job['expires'] + 10, 'queue', 'worker', 10), [])
         self.assertEqual(self.lua('job.get', 0, 'jid')['state'], 'failed')
         self.assertEqual(self.lua.log, [{
             'channel': b'ql:w:worker',
