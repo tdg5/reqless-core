@@ -233,11 +233,3 @@ class TestDependencies(TestReqless):
             self.lua, 'job.addDependency', 0, 'jid', 'a')
         self.assertRaisesRegexp(redis.ResponseError, r'in the depends state',
             self.lua, 'job.removeDependency', 0, 'jid', 'a')
-
-    def test_depends_still_works(self):
-        '''Deprecated depends API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0)
-        self.lua('queue.put', 1, 'worker', 'queue', 'b', 'klass', {}, 0)
-        self.lua('queue.put', 2, 'worker', 'queue', 'c', 'klass', {}, 0, 'depends', ['a'])
-        self.lua('depends', 3, 'c', 'on', 'b')
-        self.assertEqual(set(self.lua('job.get', 4, 'c')['dependencies']), set(['a', 'b']))

@@ -151,26 +151,6 @@ class TestWorker(TestReqless):
             found = [w['name'] for w in self.lua('workers.counts', 2)]
             self.assertFalse(worker in found)
 
-    def test_worker_deregister_still_works(self):
-        '''Deprecated worker.deregister API still works'''
-        count = 10
-        for jid in list(range(count)):
-            result_jid = self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
-            self.assertEqual(jid, result_jid)
-        # And pop them from 10 different workers
-        workers = list(map(str, range(count)))
-        for worker in workers:
-            self.lua('queue.pop', 1, 'queue', worker, 1)
-        # And we'll deregister them each one at a time and ensure they are
-        # indeed removed from our list
-        self.assertEqual(count, len(list(workers)))
-        for worker in workers:
-            found = [w['name'] for w in self.lua('workers.counts', 2)]
-            self.assertTrue(worker in found)
-            self.lua('worker.deregister', 2, worker)
-            found = [w['name'] for w in self.lua('workers.counts', 2)]
-            self.assertFalse(worker in found)
-
     def test_expiration(self):
         '''After a certain amount of time, inactive workers expire'''
         # Set the maximum worker age
@@ -197,17 +177,3 @@ class TestWorker(TestReqless):
             'jobs': {},
             'stalled': {}
         })
-
-    def test_workers_still_works(self):
-        '''Deprecated workers API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('workers', 2, 'worker'), {
-            'jobs': ['jid'],
-            'stalled': {}
-        })
-        self.assertEqual(self.lua('workers', 2), [{
-            'name': 'worker',
-            'jobs': 1,
-            'stalled': 0
-        }])

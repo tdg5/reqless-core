@@ -22,15 +22,6 @@ class TestJob(TestReqless):
             {'foo': 'bar', 'what': 'foo', 'when': 0}
         ])
 
-    def test_log_still_works(self):
-        '''Deprecated log API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('log', 0, 'jid', 'foo', {'foo': 'bar'})
-        self.assertEqual(self.lua('job.get', 0, 'jid')['history'], [
-            {'queue': 'queue', 'what': 'put', 'when': 0},
-            {'foo': 'bar', 'what': 'foo', 'when': 0}
-        ])
-
     def test_log_nonexistent(self):
         '''If a job doesn't exist, logging throws an error'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
@@ -48,14 +39,6 @@ class TestJob(TestReqless):
             {'queue': 'queue', 'what': 'put', 'when': 98},
             {'queue': 'queue', 'what': 'put', 'when': 99}])
 
-    def test_heartbeat_still_works(self):
-        '''Deprecated heartbeat API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.lua('heartbeat', 2, 'jid', 'worker', {})
-        self.lua('job.cancel', 3, 'jid')
-        self.assertRaisesRegexp(redis.ResponseError, r'Job does not exist',
-            self.lua, 'heartbeat', 4, 'jid', 'worker', {})
 
 class TestRequeue(TestReqless):
     def test_requeue_existing_job(self):
@@ -71,12 +54,6 @@ class TestRequeue(TestReqless):
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',
             self.lua, 'job.requeue', 2, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
 
-
-    def test_multiget_still_works(self):
-        '''Deprecated multiget API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.put', 1, 'worker', 'queue', 'jid2', 'klass', {}, 0)
-        self.assertEqual(2, len(self.lua('multiget', 2, 'jid', 'jid2')))
 
     def test_requeue_throttled_job(self):
         '''Requeueing  a throttled job should maintain correct state'''
@@ -96,11 +73,6 @@ class TestRequeue(TestReqless):
         del original['history']
         self.assertEqual(updated, original)
 
-    def test_requeue_still_works(self):
-        '''Deprecated requeue API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('requeue', 1, 'worker', 'queue-2', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('job.get', 0, 'jid')['queue'], 'queue-2')
 
 class TestComplete(TestReqless):
     '''Test how we complete jobs'''
@@ -167,13 +139,6 @@ class TestComplete(TestReqless):
             'worker': 'worker'})
         self.lua('job.complete', 6, 'jid', 'worker', 'queue', {})
         self.assertEqual(self.lua('job.get', 7, 'jid')['failure'], {})
-
-    def test_get_still_works(self):
-        '''Deprecated get API still works'''
-        jid = 'get_still_works_jid'
-        self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
-        job = self.lua('get', 3, jid)
-        self.assertEqual(jid, job['jid'])
 
     def test_basic(self):
         '''Basic completion'''
@@ -274,22 +239,6 @@ class TestComplete(TestReqless):
         self.assertEqual(self.lua('jobs.tagged', 10, 'abc', 0, 0)['jobs'], {})
         self.assertEqual(self.redis.zrange('ql:tags', 0, -1), [])
 
-    def test_complete_still_works(self):
-        '''Deprecated complete API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 1)
-        self.lua('complete', 2, 'jid', 'worker', 'queue', {})
-        # Ensure that it shows up everywhere it should
-        self.assertEqual(self.lua('job.get', 3, 'jid')['state'], 'complete')
-
-    def test_complete_that_reques_still_works(self):
-        '''Deprecated complete API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 1)
-        self.lua('complete', 2, 'jid', 'worker', 'queue', {}, 'next', 'queue-2')
-
-        # The job should be requeued immediately to queue-2
-        self.assertEqual(self.lua('job.get', 3, 'jid')['queue'], 'queue-2')
 
 class TestTimeout(TestReqless):
     '''Basic timeout works'''
@@ -302,15 +251,6 @@ class TestTimeout(TestReqless):
         self.assertEqual(job['state'], 'stalled')
         self.assertEqual(job['worker'], '')
 
-    '''Deprecated timeout API still works'''
-    def test_timeout_still_works(self):
-        '''Deprecated timeout API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 1)
-        self.lua('timeout', 0, 'jid')
-        job = self.lua('job.get', 0, 'jid')
-        self.assertEqual(job['state'], 'stalled')
-        self.assertEqual(job['worker'], '')
 
 class TestCancel(TestReqless):
     '''Canceling jobs'''
@@ -380,12 +320,6 @@ class TestCancel(TestReqless):
         self.lua('queue.pop', 2, 'queue', 'worker', 10)
         self.lua('job.cancel', 3, 'jid')
         self.assertEqual(self.lua('job.get', 4, 'jid'), None)
-
-    def test_cancel_still_works(self):
-        '''Deprecated cancel API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('cancel', 0, 'jid')
-        self.assertEqual(self.lua('job.get', 0, 'jid'), None)
 
 
 class TestThrottles(TestReqless):

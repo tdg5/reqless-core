@@ -60,23 +60,6 @@ class TestRecurring(TestReqless):
         self.assertEqual(popped[0]['jid'], 'jid-2')
         self.assertEqual(popped[0]['spawned_from_jid'], 'jid')
 
-    def test_recur_still_works(self):
-        '''Deprecated recur API still works'''
-        self.lua('recur', 0, 'queue', 'jid', 'klass', {}, 'interval', 60, 0)
-        # Pop off the first recurring job
-        popped = self.lua('queue.pop', 0, 'queue', 'worker', 10)
-        self.assertEqual(len(popped), 1)
-        self.assertEqual(popped[0]['jid'], 'jid-1')
-        self.assertEqual(popped[0]['spawned_from_jid'], 'jid')
-
-        # If we wait 59 seconds, there won't be a job, but at 60, yes
-        popped = self.lua('queue.pop', 59, 'queue', 'worker', 10)
-        self.assertEqual(len(popped), 0)
-        popped = self.lua('queue.pop', 61, 'queue', 'worker', 10)
-        self.assertEqual(len(popped), 1)
-        self.assertEqual(popped[0]['jid'], 'jid-2')
-        self.assertEqual(popped[0]['spawned_from_jid'], 'jid')
-
     def test_offset(self):
         '''We can set an offset from now for jobs to recur on'''
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 10)
@@ -145,24 +128,6 @@ class TestRecurring(TestReqless):
             'throttles': ['ql:q:queue'],
         })
 
-    def test_recur_dot_get_still_works(self):
-        '''Deprecated recur.get API still works'''
-        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
-        self.assertEqual(self.lua('recur.get', 0, 'jid'), {
-            'backlog': 0,
-            'count': 0,
-            'data': '{}',
-            'interval': 60,
-            'jid': 'jid',
-            'klass': 'klass',
-            'priority': 0,
-            'queue': 'queue',
-            'retries': 0,
-            'state': 'recur',
-            'tags': {},
-            'throttles': ['ql:q:queue'],
-        })
-
     def test_update_priority(self):
         '''We need to be able to update recurring job attributes'''
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
@@ -194,15 +159,6 @@ class TestRecurring(TestReqless):
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['data'], '{}')
         self.lua('recurringJob.update', 0, 'jid', 'data', {'foo': 'bar'})
-        self.assertEqual(self.lua(
-            'queue.pop', 60, 'queue', 'worker', 10)[0]['data'], '{"foo": "bar"}')
-
-    def test_recur_dot_update_still_works(self):
-        '''Deprecated recur.update API still works'''
-        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60,  0)
-        self.assertEqual(
-            self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['data'], '{}')
-        self.lua('recur.update', 0, 'jid', 'data', {'foo': 'bar'})
         self.assertEqual(self.lua(
             'queue.pop', 60, 'queue', 'worker', 10)[0]['data'], '{"foo": "bar"}')
 
@@ -244,13 +200,6 @@ class TestRecurring(TestReqless):
         self.lua('recurringJob.cancel', 0, 'jid')
         self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
 
-    def test_unrecur_still_works(self):
-        '''Deprecated unrecur API still works'''
-        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
-        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 10)), 1)
-        self.lua('unrecur', 0, 'jid')
-        self.assertEqual(len(self.lua('queue.pop', 60, 'queue', 'worker', 10)), 0)
-
     def test_empty_array_data(self):
         '''Empty array of data is preserved'''
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', [], 60, 0)
@@ -272,30 +221,12 @@ class TestRecurring(TestReqless):
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], ['foo'])
 
-    def test_recur_dot_tag_still_works(self):
-        '''Deprecated recur.tag API still works'''
-        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0)
-        self.assertEqual(
-            self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], {})
-        self.lua('recur.tag', 0, 'jid', 'foo')
-        self.assertEqual(
-            self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], ['foo'])
-
     def test_untag(self):
         '''We should be able to remove tags from a job'''
         self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags', ['foo'])
         self.assertEqual(
             self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
         self.lua('recurringJob.removeTag', 0, 'jid', 'foo')
-        self.assertEqual(
-            self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], {})
-
-    def test_untag_still_works(self):
-        '''Deprecated untag API still works'''
-        self.lua('queue.recurAtInterval', 0, 'queue', 'jid', 'klass', {}, 60, 0, 'tags', ['foo'])
-        self.assertEqual(
-            self.lua('queue.pop', 0, 'queue', 'worker', 10)[0]['tags'], ['foo'])
-        self.lua('recur.untag', 0, 'jid', 'foo')
         self.assertEqual(
             self.lua('queue.pop', 60, 'queue', 'worker', 10)[0]['tags'], {})
 

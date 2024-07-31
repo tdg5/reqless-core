@@ -5,18 +5,6 @@ from common import TestReqless
 
 class TestConfig(TestReqless):
     '''Test configuration functionality'''
-    def test_get_without_key_still_works(self):
-        '''Deprecated config.get retrieval of all configs still works'''
-        self.assertEqual(self.lua('config.get', 0), {
-            'application': 'reqless',
-            'grace-period': 10,
-            'heartbeat': 60,
-            'jobs-history': 604800,
-            'jobs-history-count': 50000,
-            'max-job-history': 100,
-            'max-pop-retry': 1,
-            'max-worker-age': 86400,
-        })
 
     def test_get_all(self):
         '''Should be able to access all configurations'''

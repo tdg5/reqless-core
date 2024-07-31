@@ -49,38 +49,6 @@ class TestFail(TestReqless):
             'worker': u'',
             'spawned_from_jid': False})
 
-    def test_fail_still_works(self):
-        '''Deprecated fail API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.lua('fail', 2, 'jid', 'worker', 'group', 'message', {})
-        self.assertEqual(self.lua('job.get', 3, 'jid'), {'data': '{}',
-            'dependencies': {},
-            'dependents': {},
-            'expires': 0,
-            'failure': {'group': 'group',
-                        'message': 'message',
-                        'when': 2,
-                        'worker': 'worker'},
-            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
-                        {'what': 'popped', 'when': 1, 'worker': 'worker'},
-                        {'group': 'group',
-                         'what': 'failed',
-                         'when': 2,
-                         'worker': 'worker'}],
-            'jid': 'jid',
-            'klass': 'klass',
-            'priority': 0,
-            'queue': 'queue',
-            'remaining': 5,
-            'retries': 5,
-            'state': 'failed',
-            'tags': {},
-            'tracked': False,
-            'throttles': ['ql:q:queue'],
-            'worker': u'',
-            'spawned_from_jid': False})
-
     def test_put(self):
         '''Can put a job that has been failed'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
@@ -187,19 +155,6 @@ class TestFailed(TestReqless):
         self.assertEqual(
             self.lua('jobs.failedByGroup', 0, 'group', 50, 50)['jobs'], jids[50:])
 
-    def test_failed_still_works(self):
-        '''Deprecated failed API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 0, 'queue', 'worker', 10)
-        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message')
-        self.assertEqual(self.lua('failed', 0), {
-            'group': 1
-        })
-        self.assertEqual(self.lua('failed', 0, 'group'), {
-            'total': 1,
-            'jobs': ['jid']
-        })
-
 
 class TestUnfailed(TestReqless):
     '''Test access to unfailed'''
@@ -222,17 +177,5 @@ class TestUnfailed(TestReqless):
             self.lua('job.fail', 0, jid, 'worker', 'group', 'message')
             self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
         self.lua('queue.unfail', 0, 'queue', 'group', 100)
-        for jid in jids:
-            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'waiting')
-
-    def test_unfail_still_works(self):
-        '''Deprecated unfail API still works'''
-        jids = map(str, range(10))
-        for jid in jids:
-            self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
-            self.lua('queue.pop', 0, 'queue', 'worker', 10)
-            self.lua('job.fail', 0, jid, 'worker', 'group', 'message')
-            self.assertEqual(self.lua('job.get', 0, jid)['state'], 'failed')
-        self.lua('unfail', 0, 'queue', 'group', 100)
         for jid in jids:
             self.assertEqual(self.lua('job.get', 0, jid)['state'], 'waiting')

@@ -33,19 +33,6 @@ class TestTag(TestReqless):
         self.lua('job.removeTag', 0, 'jid', 'foo')
         self.assertEqual(self.lua('job.get', 0, 'jid')['tags'], {})
 
-    def test_tag_still_works(self):
-        '''Deprecated tag API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.put', 0, 'worker', 'queue', 'other_jid', 'klass', {}, 0)
-        self.lua('tag', 1, 'add', 'jid', 'foo')
-        # Tag must be used at least twice.
-        self.lua('tag', 1, 'add', 'other_jid', 'foo')
-        self.assertEqual(self.lua('job.get', 3, 'jid')['tags'], ['foo'])
-        self.assertEqual(self.lua('tag', 4, 'get', 'foo', 0, 10)['jobs'], ['jid', 'other_jid'])
-        self.assertEqual(self.lua('tag', 5, 'top', 0, 10), ['foo'])
-        self.lua('tag', 6, 'remove', 'jid', 'foo')
-        self.assertEqual(self.lua('job.get', 8, 'jid')['tags'], {})
-
     def test_add_existing(self):
         '''We shouldn't double-add tags that already exist for the job'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'tags', ['foo'])

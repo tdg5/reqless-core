@@ -48,14 +48,6 @@ class TestTrack(TestReqless):
         self.lua('job.untrack', 0, 'jid')
         self.assertEqual(self.lua('jobs.tracked', 0), {'jobs': {}, 'expired': {}})
 
-    def test_track_still_works(self):
-        '''Deprecated track API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('track', 1, 'track', 'jid')
-        self.assertEqual(self.lua('track', 2)['jobs'][0]['jid'], 'jid')
-        self.lua('track', 3, 'untrack', 'jid')
-        self.assertEqual(self.lua('track', 4), {'jobs': {}, 'expired': {}})
-
     def test_track_nonexistent(self):
         '''Tracking nonexistent jobs raises an error'''
         self.assertRaisesRegexp(redis.ResponseError, r'does not exist',

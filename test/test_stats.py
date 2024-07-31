@@ -118,13 +118,3 @@ class TestStats(TestReqless):
         self.lua('queue.pop', 2, 'queue', 'worker', 10)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failed'], 1)
         self.assertEqual(self.lua('queue.stats', 0, 'queue', 0)['failures'], 1)
-
-    def test_stats_still_works(self):
-        '''Deprecated stats API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.lua('queue.pop', 0, 'queue', 'worker', 1)
-        self.lua('job.fail', 0, 'jid', 'worker', 'group', 'message', {})
-        self.lua('job.cancel', 0, 'jid')
-        stats = self.lua('stats', 0, 'queue', 0)
-        self.assertEqual(stats['failed'], 0)
-        self.assertEqual(stats['failures'], 1)

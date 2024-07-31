@@ -329,36 +329,6 @@ class TestRetry(TestReqless):
             'spawned_from_jid': False
         })
 
-    def test_retry_still_works(self):
-        '''Deprecated retry API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0, 'retries', 0)
-        self.lua('queue.pop', 0, 'queue', 'worker', 10)
-        self.lua(
-            'retry', 0, 'jid', 'queue', 'worker', 0, 'group', 'message')
-        self.assertEqual(self.lua('job.get', 0, 'jid'), {'data': '{}',
-            'dependencies': {},
-            'dependents': {},
-            'expires': 0,
-            'failure': {'group': 'group',
-                        'message': 'message',
-                        'when': 0,
-                        'worker': 'worker'},
-            'history': [{'queue': 'queue', 'what': 'put', 'when': 0},
-                        {'what': 'popped', 'when': 0, 'worker': 'worker'},
-                        {'group': 'group', 'what': 'failed-retries', 'when': 0}],
-            'jid': 'jid',
-            'klass': 'klass',
-            'priority': 0,
-            'queue': 'queue',
-            'remaining': -1,
-            'retries': 0,
-            'state': 'failed',
-            'tags': {},
-            'tracked': False,
-            'throttles': ['ql:q:queue'],
-            'worker': u'',
-            'spawned_from_jid': False})
-
 
 class TestGracePeriod(TestReqless):
     '''Make sure the grace period is honored'''

@@ -137,22 +137,6 @@ class TestJobs(TestReqless):
             list(map(int, self.lua('queue.jobsByState', 100, 'running', 'queue', 50, 50))),
             list(map(int, jids[50:])))
 
-    def test_jobs_still_works(self):
-        '''Deprecated jobs API still works'''
-        jids = list(map(str, range(100)))
-        for jid in jids:
-            self.lua('queue.put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
-            self.lua('queue.pop', jid, 'queue', 'worker', 10)
-            self.lua('job.complete', jid, jid, 'worker', 'queue', {})
-        # Get two pages and ensure they're what we expect
-        jids = list(reversed(jids))
-        self.assertEqual(
-            list(map(int, self.lua('jobs', 0, 'complete', 0, 50))),
-            list(map(int, jids[:50])))
-        self.assertEqual(
-            list(map(int, self.lua('jobs', 0, 'complete', 50, 50))),
-            list(map(int, jids[50:])))
-
 
 class TestQueue(TestReqless):
     '''Test queue info tests'''
@@ -290,32 +274,6 @@ class TestQueue(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 10)
         self.assertEqual(self.lua('queue.counts', 20, 'queue'), expected)
         self.assertEqual(self.lua('queues.counts', 20), [expected])
-
-    def test_queues_still_works(self):
-        '''Deprecated queues API still works'''
-        expected = dict(self.expected)
-        expected['waiting'] = 1
-        self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('queues', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues', 0), [expected])
-
-    def test_pause_and_unpause_still_work(self):
-        '''Deprecated pause API still works'''
-        jids = map(str, range(10))
-        for jid in jids:
-            self.lua('queue.put', 0, 'worker', 'queue', jid, 'klass', {}, 0)
-        # After pausing, we can't get the jobs, and the state reflects it
-        self.lua('pause', 0, 'queue')
-        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 0)
-        expected = dict(self.expected)
-        expected['paused'] = True
-        expected['waiting'] = 10
-        self.assertEqual(self.lua('queue.counts', 0, 'queue'), expected)
-        self.assertEqual(self.lua('queues.counts', 0), [expected])
-
-        # Once unpaused, we should be able to pop jobs off
-        self.lua('unpause', 0, 'queue')
-        self.assertEqual(len(self.lua('queue.pop', 0, 'queue', 'worker', 100)), 10)
 
 
 class TestPut(TestReqless):
@@ -624,47 +582,6 @@ class TestPeek(TestReqless):
         self.assertEqual(['a', 'b'],
             [j['jid'] for j in self.lua('queue.peek', 0, 'queue', 0, 100)])
 
-    def test_priority_still_works(self):
-        '''Deprecated priority API still works'''
-        self.lua('queue.put', 0, 'worker', 'queue', 'a', 'klass', {}, 0, 'priority', 0)
-        self.lua('queue.put', 0, 'worker', 'queue', 'b', 'klass', {}, 0, 'priority', 1)
-        self.assertEqual(['b', 'a'],
-            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
-        self.lua('priority', 0, 'a', 2)
-        self.assertEqual(['a', 'b'],
-            [j['jid'] for j in self.lua('peek', 0, 'queue', 0, 100)])
-
-    def test_peek_still_works(self):
-        '''Deprecated peek API still works'''
-        # No jobs for an empty queue
-        self.assertEqual(self.lua('queue.peek', 0, 'foo', 0, 10), [])
-        self.lua('queue.put', 0, 'worker', 'foo', 'jid', 'klass', {}, 0)
-        # And now we should see a single job
-        self.assertEqual(self.lua('queue.peek', 1, 'foo', 0, 10), [{
-            'data': '{}',
-            'dependencies': {},
-            'dependents': {},
-            'expires': 0,
-            'failure': {},
-            'history': [{'queue': 'foo', 'what': 'put', 'when': 0}],
-            'jid': 'jid',
-            'klass': 'klass',
-            'priority': 0,
-            'queue': 'foo',
-            'remaining': 5,
-            'retries': 5,
-            'state': 'waiting',
-            'tags': {},
-            'tracked': False,
-            'throttles': ['ql:q:foo'],
-            'worker': u'',
-            'spawned_from_jid': False
-        }])
-        # With several jobs in the queue, we should be able to see more
-        self.lua('queue.put', 2, 'worker', 'foo', 'jid2', 'klass', {}, 0)
-        self.assertEqual([o['jid'] for o in self.lua('queue.peek', 3, 'foo', 0, 10)], [
-            'jid', 'jid2'])
-
 
 class TestPop(TestReqless):
     '''Test popping jobs'''
@@ -718,19 +635,6 @@ class TestPop(TestReqless):
         # This should only leave 3 left
         self.assertEqual(
             [job['jid'] for job in self.lua('queue.pop', 100, 'queue', 'worker', 10)],
-            list(map(str, range(7, 10))))
-
-    def test_pop_still_works(self):
-        '''Deprecated pop API still works'''
-        for jid in range(10):
-            self.lua('queue.put', jid, 'worker', 'queue', jid, 'klass', {}, 0)
-        # This should only pop the first 7
-        self.assertEqual(
-            [job['jid'] for job in self.lua('pop', 100, 'queue', 'worker', 7)],
-            list(map(str, range(7))))
-        # This should only leave 3 left
-        self.assertEqual(
-            [job['jid'] for job in self.lua('pop', 100, 'queue', 'worker', 10)],
             list(map(str, range(7, 10))))
 
     def test_priority(self):
