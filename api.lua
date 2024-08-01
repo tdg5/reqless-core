@@ -279,12 +279,12 @@ ReqlessAPI['throttle.set'] = function(now, tid, max, ...)
   Reqless.throttle(tid):set(data, tonumber(expiration or 0))
 end
 
-ReqlessAPI['worker.counts'] = function(now, worker)
-  return cjson.encode(ReqlessWorker.counts(now, worker))
-end
-
 ReqlessAPI['worker.forget'] = function(now, ...)
   ReqlessWorker.deregister(unpack(arg))
+end
+
+ReqlessAPI['worker.jobs'] = function(now, worker)
+  return cjson.encode(ReqlessWorker.counts(now, worker))
 end
 
 ReqlessAPI['workers.counts'] = function(now)

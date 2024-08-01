@@ -14,7 +14,7 @@ class TestWorker(TestReqless):
         '''Basic worker-level information'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
@@ -30,7 +30,7 @@ class TestWorker(TestReqless):
         job = self.lua('queue.pop', 1, 'queue', 'worker', 10)[0]
         expires = job['expires'] + 10
         self.lua('queue.peek', expires, 'queue', 0, 10)
-        self.assertEqual(self.lua('worker.counts', expires, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', expires, 'worker'), {
             'jobs': {},
             'stalled': ['jid']
         })
@@ -44,7 +44,7 @@ class TestWorker(TestReqless):
         '''When a lock is lost, removes the job from the worker's info'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         job = self.lua('queue.pop', 1, 'queue', 'worker', 10)[0]
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
@@ -52,7 +52,7 @@ class TestWorker(TestReqless):
         # about that job from that worker
         expires = job['expires'] + 10
         self.lua('queue.pop', expires, 'queue', 'another', 10)
-        self.assertEqual(self.lua('worker.counts', expires, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', expires, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -61,13 +61,13 @@ class TestWorker(TestReqless):
         '''Canceling a job removes it from the worker's stats'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
         # And now, we'll cancel it, and it should disappear
         self.lua('job.cancel', 3, 'jid')
-        self.assertEqual(self.lua('worker.counts', 4, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 4, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -81,12 +81,12 @@ class TestWorker(TestReqless):
         '''When a job fails, it should be removed from a worker's jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
         self.lua('job.fail', 3, 'jid', 'worker', 'group', 'message', {})
-        self.assertEqual(self.lua('worker.counts', 4, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 4, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -100,12 +100,12 @@ class TestWorker(TestReqless):
         '''When a job completes, it should be remove from the worker's jobs'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
         self.lua('job.complete', 3, 'jid', 'worker', 'queue', {})
-        self.assertEqual(self.lua('worker.counts', 4, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 4, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -119,12 +119,12 @@ class TestWorker(TestReqless):
         '''When a job's put in another queue, remove it from the worker'''
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 1, 'queue', 'worker', 10)
-        self.assertEqual(self.lua('worker.counts', 2, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 2, 'worker'), {
             'jobs': ['jid'],
             'stalled': {}
         })
         self.lua('queue.put', 3, 'worker', 'queue', 'jid', 'klass', {}, 0)
-        self.assertEqual(self.lua('worker.counts', 4, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 4, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -163,7 +163,7 @@ class TestWorker(TestReqless):
 
     def test_forgotten(self):
         '''If a worker is unknown, it should still be ok'''
-        self.assertEqual(self.lua('worker.counts', 3600, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 3600, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
@@ -173,7 +173,7 @@ class TestWorker(TestReqless):
         self.lua('queue.put', 0, 'worker', 'queue', 'jid', 'klass', {}, 0)
         self.lua('queue.pop', 0, 'queue', 'worker', 10)
         self.lua('job.retry', 0, 'jid', 'queue', 'worker', 0)
-        self.assertEqual(self.lua('worker.counts', 3600, 'worker'), {
+        self.assertEqual(self.lua('worker.jobs', 3600, 'worker'), {
             'jobs': {},
             'stalled': {}
         })
