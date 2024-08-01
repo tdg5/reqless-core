@@ -284,7 +284,7 @@ ReqlessAPI['worker.counts'] = function(now, worker)
 end
 
 ReqlessAPI['worker.forget'] = function(now, ...)
-  return ReqlessWorker.deregister(unpack(arg))
+  ReqlessWorker.deregister(unpack(arg))
 end
 
 ReqlessAPI['workers.counts'] = function(now)
