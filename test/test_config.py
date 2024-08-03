@@ -10,22 +10,26 @@ class TestConfig(TestReqless):
         '''Should be able to access all configurations'''
         self.assertEqual(self.lua('config.getAll', 0), {
             'application': 'reqless',
-            'grace-period': 10,
-            'heartbeat': 60,
-            'jobs-history': 604800,
-            'jobs-history-count': 50000,
-            'max-job-history': 100,
-            'max-pop-retry': 1,
-            'max-worker-age': 86400,
+            'grace-period': '10',
+            'heartbeat': '60',
+            'jobs-history': '604800',
+            'jobs-history-count': '50000',
+            'max-job-history': '100',
+            'max-pop-retry': '1',
+            'max-worker-age': '86400',
         })
 
     def test_get(self):
         '''Should be able to get each key individually'''
-        for key, value in self.lua('config.get', 0).items():
+        for key, value in self.lua('config.getAll', 0).items():
             retrievedValue = self.lua('config.get', 0, key)
             if isinstance(retrievedValue, bytes):
                 retrievedValue = retrievedValue.decode("utf-8")
-            self.assertEqual(retrievedValue, value)
+            # ReqlessRecorder first tries to parse everything as though it were
+            # JSON, so numbers encoded as strings end up looking like numbers
+            # when they are really strings. All redis hash values are strings,
+            # so we expect strings here.
+            self.assertEqual(str(retrievedValue), value)
 
     def test_set_get(self):
         '''If we update a configuration setting, we can get it back'''
