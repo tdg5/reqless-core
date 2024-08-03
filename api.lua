@@ -22,7 +22,7 @@ end
 
 -- Unset a configuration option
 ReqlessAPI['config.unset'] = function(now, key)
-  return Reqless.config.unset(key)
+  Reqless.config.unset(key)
 end
 
 ReqlessAPI['failureGroups.counts'] = function(now, start, limit)

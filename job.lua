@@ -624,7 +624,7 @@ function ReqlessJob:heartbeat(now, worker, data)
       'expires', expires, 'worker', worker)
   end
 
-  -- Update hwen this job was last updated on that worker
+  -- Update when this job was last updated on that worker
   -- Add this job to the list of jobs handled by this worker
   redis.call('zadd', 'ql:w:' .. worker .. ':jobs', expires, self.jid)
 
