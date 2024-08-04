@@ -63,7 +63,7 @@ ReqlessAPI['job.get'] = function(now, jid)
   end
 end
 
--- Return json blob of data or nil for each jid provided
+-- Return json blob of data for each jid provided that exists.
 ReqlessAPI['job.getMulti'] = function(now, ...)
   local results = {}
   for _, jid in ipairs(arg) do

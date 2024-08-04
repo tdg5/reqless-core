@@ -2,7 +2,8 @@
 -- Configuration interactions
 -------------------------------------------------------------------------------
 
--- This represents our default configuration settings
+-- This represents our default configuration settings. Redis hash values are
+-- strings, so use strings for the defaults for more consistent typing.
 Reqless.config.defaults = {
   ['application']        = 'reqless',
   ['grace-period']       = '10',
