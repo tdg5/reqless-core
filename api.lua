@@ -209,6 +209,14 @@ ReqlessAPI['queue.unpause'] = function(now, ...)
   ReqlessQueue.unpause(unpack(arg))
 end
 
+ReqlessAPI['queueIdentifierPatterns.getAll'] = function(now)
+  return cjson.encode(ReqlessQueuePatterns.getIdentifierPatterns(now))
+end
+
+ReqlessAPI['queueIdentifierPatterns.setAll'] = function(now, ...)
+  ReqlessQueuePatterns.setIdentifierPatterns(now, unpack(arg))
+end
+
 ReqlessAPI['queues.counts'] = function(now)
   return cjsonArrayDegenerationWorkaround(ReqlessQueue.counts(now, nil))
 end
