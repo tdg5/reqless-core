@@ -63,3 +63,27 @@ ReqlessQueuePatterns['setIdentifierPatterns'] = function(now, ...)
   redis.call('del', key, 'qmore:dynamic')
   redis.call('hset', key, unpack(identifierPatterns))
 end
+
+ReqlessQueuePatterns['getPriorityPatterns'] = function(now)
+  local reply = redis.call('lrange', ReqlessQueuePatterns.ns .. 'priorities', 0, -1)
+
+  if #reply == 0 then
+    -- Check legacy key
+    reply = redis.call('lrange', 'qmore:priority', 0, -1)
+  end
+
+  return reply
+end
+
+-- Each key is a string and each value is a string containing a JSON object
+-- where the JSON object has a shape like:
+-- {"fairly": true, "pattern": ["string", "string", "string"]}
+ReqlessQueuePatterns['setPriorityPatterns'] = function(now, ...)
+  local key = ReqlessQueuePatterns.ns .. 'priorities'
+  redis.call('del', key)
+  -- Clear out the legacy key
+  redis.call('del', 'qmore:priority')
+  if #arg > 0 then
+    redis.call('rpush', key, unpack(arg))
+  end
+end

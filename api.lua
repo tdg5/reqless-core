@@ -217,6 +217,14 @@ ReqlessAPI['queueIdentifierPatterns.setAll'] = function(now, ...)
   ReqlessQueuePatterns.setIdentifierPatterns(now, unpack(arg))
 end
 
+ReqlessAPI['queuePriorityPatterns.getAll'] = function(now)
+  return cjsonArrayDegenerationWorkaround(ReqlessQueuePatterns.getPriorityPatterns(now))
+end
+
+ReqlessAPI['queuePriorityPatterns.setAll'] = function(now, ...)
+  ReqlessQueuePatterns.setPriorityPatterns(now, unpack(arg))
+end
+
 ReqlessAPI['queues.counts'] = function(now)
   return cjsonArrayDegenerationWorkaround(ReqlessQueue.counts(now, nil))
 end
