@@ -1,6 +1,6 @@
 '''Test our tagging functionality'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestTag(TestReqless):

@@ -1,7 +1,8 @@
 '''Check some general functionality surrounding the the API'''
 
 import redis
-from common import TestReqless
+
+from test.common import TestReqless
 
 
 class TestGeneral(TestReqless):

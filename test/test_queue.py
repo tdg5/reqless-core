@@ -1,6 +1,6 @@
 '''Test the queue functionality'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 class TestJobs(TestReqless):
     '''We should be able to list jobs in various states for a given queue'''

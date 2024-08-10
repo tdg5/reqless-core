@@ -1,6 +1,6 @@
 '''Test the stats we keep about queues'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestStats(TestReqless):

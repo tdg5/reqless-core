@@ -1,7 +1,8 @@
 '''Test all the tracking'''
 
 import redis
-from common import TestReqless
+
+from test.common import TestReqless
 
 
 class TestTrack(TestReqless):

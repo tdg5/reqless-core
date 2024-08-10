@@ -1,7 +1,8 @@
 '''Test job-centric operations'''
 
 import redis
-from common import TestReqless
+
+from test.common import TestReqless
 
 class TestJob(TestReqless):
     '''Some general jobby things'''

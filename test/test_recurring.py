@@ -1,6 +1,6 @@
 '''Tests for recurring jobs'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestRecurring(TestReqless):

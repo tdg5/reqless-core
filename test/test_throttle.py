@@ -3,7 +3,7 @@
 import redis
 import code
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestThrottle(TestReqless):
@@ -29,12 +29,12 @@ class TestThrottle(TestReqless):
   '''Test retrieving throttle data'''
   def test_get(self):
     self.lua('throttle.set', 0, 'tid', 5, 1000)
-    self.redis.hmset('ql:th:tid', {'id': 'tid', 'maximum' : 5})
+    self.redis.hset('ql:th:tid', mapping={'id': 'tid', 'maximum' : 5})
     self.assertEqual(self.lua('throttle.get', 0, 'tid'), {'id' : 'tid', 'maximum' : 5, 'ttl': 1000})
 
   '''Test retrieving throttle data for queue'''
   def test_get_for_queue(self):
-    self.redis.hmset('ql:th:ql:q:queue', {'id': 'tid', 'maximum' : 5})
+    self.redis.hset('ql:th:ql:q:queue', mapping={'id': 'tid', 'maximum' : 5})
     self.assertEqual(
         self.lua('queue.throttle.get', 0, 'queue'),
         {'id' : 'ql:q:queue', 'maximum' : 5, 'ttl': -1}

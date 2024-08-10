@@ -1,7 +1,8 @@
 '''Test out dependency-related code'''
 
 import redis
-from common import TestReqless
+
+from test.common import TestReqless
 
 
 class TestDependencies(TestReqless):

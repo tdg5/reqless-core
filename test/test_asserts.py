@@ -1,6 +1,6 @@
 '''Test our own built-in asserts'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestAsserts(TestReqless):

@@ -1,6 +1,6 @@
 '''A large number of operations generate events. Let's test'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestEvents(TestReqless):

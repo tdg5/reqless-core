@@ -1,6 +1,6 @@
 '''Tests about worker information'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestWorker(TestReqless):

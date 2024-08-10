@@ -1,7 +1,8 @@
 '''Tests about locks'''
 
 import redis
-from common import TestReqless
+
+from test.common import TestReqless
 
 
 class TestLocks(TestReqless):

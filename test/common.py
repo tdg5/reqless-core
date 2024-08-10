@@ -3,8 +3,9 @@
 import os
 import re
 import redis
-import reqless
 import unittest
+
+from test import reqless
 
 
 class TestReqless(unittest.TestCase):

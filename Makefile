@@ -18,4 +18,8 @@ clean:
 
 .PHONY: test
 test: reqless.lua *.lua
-	nosetests --exe -v $(TEST)
+	pytest
+
+.PHONY: test-watch
+test-watch:
+	ptw . --patterns '*.lua,*.py' --runner scripts/pytest

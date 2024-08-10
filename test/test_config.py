@@ -1,6 +1,6 @@
 '''Tests for our configuration'''
 
-from common import TestReqless
+from test.common import TestReqless
 
 
 class TestConfig(TestReqless):
