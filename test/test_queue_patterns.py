@@ -11,7 +11,7 @@ PRIORITY_PATTERNS_KEYS = ['ql:qp:priorities', 'qmore:priority']
 
 DEFAULT_IDENTIFER_PATTERNS = {'default': '["*"]'}
 
-DEFAULT_PRIORITY_PATTERNS = []
+DEFAULT_PRIORITY_PATTERNS = ['{"fairly": false, "pattern": ["default"]}']
 
 EXAMPLE_IDENTIFIER_PATTERNS = {
     'french': ['un', 'deux', 'trois', 'quatre'],
@@ -19,8 +19,8 @@ EXAMPLE_IDENTIFIER_PATTERNS = {
 }
 
 EXAMPLE_PRIORITY_PATTERNS = [
-    {"fairly": False, "pattern": ['a','b','*','c']},
-    {"fairly": True, "pattern": ['*', 'd', 'e', 'f', 'and', 'so', 'on']},
+    {'fairly': False, 'pattern': ['a','b','*','c']},
+    {'fairly': True, 'pattern': ['*', 'd', 'e', 'f', 'and', 'so', 'on']},
 ]
 
 
@@ -53,7 +53,7 @@ class TestQueuePatterns(TestReqless):
 
     def test_get_all_identifier_patterns_returns_custom_default_if_set(self):
         '''Should return custom defaults if they've been set.'''
-        expected_patterns = {'default': EXAMPLE_IDENTIFIER_PATTERNS["french"]}
+        expected_patterns = {'default': EXAMPLE_IDENTIFIER_PATTERNS['french']}
         serialized_patterns = {
             key: json.dumps(value) for key, value in expected_patterns.items()
         }
@@ -88,7 +88,7 @@ class TestQueuePatterns(TestReqless):
 
     def test_set_all_identifier_patterns_can_set_default_pattern(self):
         '''Should be able to set default identifier pattern'''
-        expected_patterns = {'default': EXAMPLE_IDENTIFIER_PATTERNS["french"]}
+        expected_patterns = {'default': EXAMPLE_IDENTIFIER_PATTERNS['french']}
         serialized_patterns = {
             key: json.dumps(value) for key, value in expected_patterns.items()
         }
@@ -97,8 +97,8 @@ class TestQueuePatterns(TestReqless):
         self.lua(
             'queueIdentifierPatterns.setAll',
             1,
-            "default",
-            expected_patterns["default"],
+            'default',
+            expected_patterns['default'],
         )
         self.assertEqual(self.lua('queueIdentifierPatterns.getAll', 2), serialized_patterns)
 
@@ -108,8 +108,8 @@ class TestQueuePatterns(TestReqless):
         self.lua(
             'queueIdentifierPatterns.setAll',
             1,
-            "default",
-            "[]",
+            'default',
+            '[]',
         )
         self.assertEqual(
             self.lua('queueIdentifierPatterns.getAll', 2),
@@ -122,8 +122,8 @@ class TestQueuePatterns(TestReqless):
         self.lua(
             'queueIdentifierPatterns.setAll',
             1,
-            "junk",
-            "[]",
+            'junk',
+            '[]',
         )
         self.assertEqual(
             self.lua('queueIdentifierPatterns.getAll', 2),
@@ -141,7 +141,7 @@ class TestQueuePatterns(TestReqless):
             for delete_key in IDENTIFIER_PATTERNS_KEYS:
                 self.redis.delete(delete_key)
             args = [item for pair in expected_patterns.items() for item in pair]
-            args.extend(["junk", "[]"])
+            args.extend(['junk', '[]'])
             self.lua('queueIdentifierPatterns.setAll', 1, *args)
             self.assertEqual(self.lua(
                 'queueIdentifierPatterns.getAll', 2),
@@ -200,7 +200,22 @@ class TestQueuePatterns(TestReqless):
         for delete_key in PRIORITY_PATTERNS_KEYS:
             self.redis.delete(delete_key)
         self.lua('queuePriorityPatterns.setAll', 1, *serialized_patterns)
-        self.assertEqual(self.lua(
-            'queuePriorityPatterns.getAll', 2),
-            serialized_patterns
+        actual_patterns = self.lua('queuePriorityPatterns.getAll', 2)
+        self.assertEqual(
+            actual_patterns,
+            [*serialized_patterns, *DEFAULT_PRIORITY_PATTERNS],
+        )
+
+
+    def test_should_not_provide_default_priority_pattern_when_given_explicit_default(self):
+        '''Should not provide default when given explicit default'''
+        expected_patterns = [{'fairly': True, 'pattern': ['default']}]
+        serialized_patterns = [json.dumps(value) for value in expected_patterns]
+        for delete_key in PRIORITY_PATTERNS_KEYS:
+            self.redis.delete(delete_key)
+        self.lua('queuePriorityPatterns.setAll', 1, *serialized_patterns)
+        actual_patterns = self.lua('queuePriorityPatterns.getAll', 2)
+        self.assertEqual(
+            actual_patterns,
+            [*serialized_patterns],
         )

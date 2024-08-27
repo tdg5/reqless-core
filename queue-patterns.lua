@@ -1,5 +1,6 @@
 local ReqlessQueuePatterns = {
   default_identifiers_default_pattern = '["*"]',
+  default_priority_pattern = '{"fairly": false, "pattern": ["default"]}',
   ns = Reqless.ns .. "qp:",
 }
 ReqlessQueuePatterns.__index = ReqlessQueuePatterns
@@ -72,6 +73,10 @@ ReqlessQueuePatterns['getPriorityPatterns'] = function(now)
     reply = redis.call('lrange', 'qmore:priority', 0, -1)
   end
 
+  if #reply == 0 then
+    reply = {ReqlessQueuePatterns.default_priority_pattern}
+  end
+
   return reply
 end
 
@@ -83,7 +88,21 @@ ReqlessQueuePatterns['setPriorityPatterns'] = function(now, ...)
   redis.call('del', key)
   -- Clear out the legacy key
   redis.call('del', 'qmore:priority')
+
   if #arg > 0 then
+    -- Check for the default priority pattern and add one if none is given.
+    local found_default = false
+    for i = 1, #arg do
+      local pattern = cjson.decode(arg[i])['pattern']
+      if #pattern == 1 and pattern[1] == 'default' then
+        found_default = true
+        break
+      end
+    end
+    if not found_default then
+      table.insert(arg, ReqlessQueuePatterns.default_priority_pattern)
+    end
+
     redis.call('rpush', key, unpack(arg))
   end
 end
