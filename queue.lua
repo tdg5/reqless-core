@@ -1122,3 +1122,8 @@ function ReqlessQueue.counts(now, name)
   end
   return response
 end
+
+-- Get the names of all the queues.
+function ReqlessQueue.names(now)
+  return redis.call('zrange', 'ql:queues', 0, -1)
+end

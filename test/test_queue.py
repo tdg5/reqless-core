@@ -275,6 +275,13 @@ class TestQueue(TestReqless):
         self.assertEqual(self.lua('queue.counts', 20, 'queue'), expected)
         self.assertEqual(self.lua('queues.counts', 20), [expected])
 
+    def test_names(self):
+        queue_names = [f"queue-{i}" for i in range(0, 10)]
+        for queue_name in queue_names:
+            self.lua('queue.put', 0, 'worker', queue_name, 'jid', 'klass', {}, 10)
+        actual_queue_names = self.lua('queues.names', 0)
+        self.assertEqual(actual_queue_names, queue_names)
+
 
 class TestPut(TestReqless):
     '''Test putting jobs into a queue'''

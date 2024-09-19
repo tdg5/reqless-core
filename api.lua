@@ -229,6 +229,10 @@ ReqlessAPI['queues.counts'] = function(now)
   return cjsonArrayDegenerationWorkaround(ReqlessQueue.counts(now, nil))
 end
 
+ReqlessAPI['queues.names'] = function(now)
+  return cjsonArrayDegenerationWorkaround(ReqlessQueue.names(now, nil))
+end
+
 ReqlessAPI['recurringJob.cancel'] = function(now, jid)
   return Reqless.recurring(jid):cancel()
 end
